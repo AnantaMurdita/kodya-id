@@ -654,6 +654,38 @@ function forumPage() {
 // ---------- Halaman Podcast & Video ----------
 const DEMO_VIDEO = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
 const DEMO_AUDIO = ["https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3", "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3", "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3"];
+
+// ---------- Pemutar podcast kustom ----------
+let __ppAudio = null; // satu elemen audio global, biar cuma satu episode yang nyala
+function ppFmt(s) { if (!isFinite(s) || s < 0) return "0:00"; s = Math.floor(s); return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0"); }
+function podcastPlayer(src, title, art) {
+  return `<div class="podcast-player" data-src="${esc(src)}"><div class="pp-art" style="background-image:url('${esc(art || IMAGE.city)}')"></div><div class="pp-main"><div class="pp-title">${esc(title)}</div><div class="pp-controls"><button type="button" class="pp-play" onclick="ppToggle(this)" aria-label="Putar">▶</button><div class="pp-bar" onclick="ppSeek(event, this)"><div class="pp-fill"></div></div><span class="pp-time">0:00</span></div></div></div>`;
+}
+window.ppToggle = btn => {
+  const player = btn.closest(".podcast-player");
+  if (!player) return;
+  const audio = (__ppAudio = __ppAudio || new Audio());
+  if (player.classList.contains("playing")) { audio.pause(); return; }
+  // Matikan UI pemutar lain yang sedang aktif
+  document.querySelectorAll(".podcast-player.playing").forEach(p => {
+    p.classList.remove("playing"); p.querySelector(".pp-play").textContent = "▶"; p.querySelector(".pp-fill").style.width = "0%"; p.querySelector(".pp-time").textContent = "0:00";
+  });
+  if (audio.src !== player.dataset.src) audio.src = player.dataset.src;
+  player.classList.add("playing");
+  btn.textContent = "❚❚";
+  const fill = player.querySelector(".pp-fill"), time = player.querySelector(".pp-time");
+  audio.ontimeupdate = () => { if (audio.duration) { fill.style.width = (audio.currentTime / audio.duration * 100) + "%"; time.textContent = ppFmt(audio.currentTime) + " / " + ppFmt(audio.duration); } };
+  audio.onloadedmetadata = () => { time.textContent = "0:00 / " + ppFmt(audio.duration); };
+  audio.onplay = () => { player.classList.add("playing"); btn.textContent = "❚❚"; };
+  audio.onpause = () => { player.classList.remove("playing"); btn.textContent = "▶"; };
+  audio.onended = () => { player.classList.remove("playing"); btn.textContent = "▶"; fill.style.width = "0%"; time.textContent = "0:00"; };
+  audio.play().catch(() => { player.classList.remove("playing"); btn.textContent = "▶"; toast("Gagal memutar audio."); });
+};
+window.ppSeek = (e, bar) => {
+  const audio = __ppAudio; if (!audio || !audio.duration) return;
+  const r = bar.getBoundingClientRect();
+  audio.currentTime = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) * audio.duration;
+};
 function videoPage() {
   const vids = published().filter(a => a.category === "Video");
   const lead = vids[0];
@@ -665,7 +697,7 @@ function videoPage() {
 function podcastPage() {
   const eps = published().filter(a => a.category === "Podcast");
   return publicChrome(`<main class="page"><div class="shell"><header class="category-title"><span class="tag">KODYA.FM</span><h1>Podcast</h1><p>Percakapan panjang untuk isu yang layak didengarkan.</p></header>
-    <section class="section"><div class="section-head"><h2>Episode Terbaru</h2></div><div class="podcast-list">${eps.map((e, i) => `<article class="podcast-card"><div class="podcast-art" style="background-image:url('${e.image}')"><span class="media-play">▶</span></div><div class="podcast-body"><h3>${esc(e.title)}</h3><p>${esc(e.excerpt)}</p><span class="meta">${esc(e.date)} · ${i === 0 ? "28 menit" : "34 menit"}</span><audio controls preload="none" src="${e.media || DEMO_AUDIO[i % DEMO_AUDIO.length]}"></audio></div></article>`).join("")}</div></section>
+    <section class="section"><div class="section-head"><h2>Episode Terbaru</h2></div><div class="podcast-list">${eps.map((e, i) => `<article class="podcast-card"><div class="podcast-art" style="background-image:url('${e.image}')"><span class="media-play">▶</span></div><div class="podcast-body"><h3>${esc(e.title)}</h3><p>${esc(e.excerpt)}</p><span class="meta">${esc(e.date)} · ${i === 0 ? "28 menit" : "34 menit"}</span>${podcastPlayer(e.media || DEMO_AUDIO[i % DEMO_AUDIO.length], e.title, e.image)}</div></article>`).join("")}</div></section>
   </div></main>`, "Podcast");
 }
 function sidebars(all) { return `<section class="side-box"><h3>TERPOPULER</h3>${all.slice(0,3).map((a,i) => `<a href="#/artikel/${a.id}" class="side-list"><span class="orange">0${i+1}. </span>${esc(a.title)}</a>`).join("")}</section><section class="side-box"><h3>UPDATE TERBARU</h3>${all.slice(3,6).map(a => `<a href="#/artikel/${a.id}" class="side-list">${esc(a.title)}</a>`).join("")}</section>`; }
@@ -674,7 +706,7 @@ function formatArticleBody(content) {
   const safe = esc(content || "");
   return safe.split(/\n{2,}/).map(p => `<p>${p.replace(/\n/g, "<br>")}</p>`).join("");
 }
-function articlePage(id) { const a = articles().find(x => x.id === Number(id)) || published()[0]; if (!a) return publicChrome(`<main class="page"><div class="shell"><div class="empty" style="padding:80px 0">Artikel tidak ditemukan.</div></div></main>`); const rel = published().filter(x => x.id !== a.id).slice(0, 3); const role = a.category === "Podcast" ? "Produser Podcast Kodya.id" : a.category === "Video" ? "Produser Video Kodya.id" : "Reporter Kodya.id"; return publicChrome(`<main class="page"><div class="shell article-page"><header class="article-heading"><span class="tag">${esc(a.category)}</span><h1>${esc(a.title)}</h1><p class="dek">${esc(a.excerpt)}</p><div class="article-author"><img class="avatar" src="${esc(a.avatar || DEFAULT_AVATAR)}" alt=""><span><strong>${esc(a.author)}</strong><br><span class="meta">${role} · ${esc(a.date)}${a.updatedAt ? ` · Diperbarui ${esc(a.updatedAt)}` : ""}</span></span></div></header><img class="article-hero" src="${a.image || IMAGE.city}" alt=""><div class="caption">Ilustrasi: Kodya.id / Unsplash</div>${a.category === "Podcast" && a.media ? `<div class="article-media"><audio controls preload="none" src="${esc(a.media)}"></audio></div>` : a.category === "Video" && a.media ? `<div class="article-media"><video controls preload="metadata" poster="${esc(a.image || IMAGE.city)}" src="${esc(a.media)}"></video></div>` : ""}<div class="article-layout"><article class="article-body">${a.content ? formatArticleBody(a.content) : `<p>${esc(a.excerpt)}</p>`}<div class="section"><div class="section-head"><h2>Artikel Terkait</h2></div><div class="editorial-grid">${rel.map(storyCard).join("")}</div></div></article><aside><section class="article-snapshot"><h4>MARKET SNAPSHOT</h4><div><span>IHSG</span><strong class="up">6.319 ▲</strong></div><div><span>USD/IDR</span><strong class="down">18.027 ▼</strong></div><div><span>Gold</span><strong class="up">4.080 ▲</strong></div></section><div style="margin-top:30px">${sidebars(published())}</div></aside></div></div></main>`, a.category); }
+function articlePage(id) { const a = articles().find(x => x.id === Number(id)) || published()[0]; if (!a) return publicChrome(`<main class="page"><div class="shell"><div class="empty" style="padding:80px 0">Artikel tidak ditemukan.</div></div></main>`); const rel = published().filter(x => x.id !== a.id).slice(0, 3); const role = a.category === "Podcast" ? "Produser Podcast Kodya.id" : a.category === "Video" ? "Produser Video Kodya.id" : "Reporter Kodya.id"; return publicChrome(`<main class="page"><div class="shell article-page"><header class="article-heading"><span class="tag">${esc(a.category)}</span><h1>${esc(a.title)}</h1><p class="dek">${esc(a.excerpt)}</p><div class="article-author"><img class="avatar" src="${esc(a.avatar || DEFAULT_AVATAR)}" alt=""><span><strong>${esc(a.author)}</strong><br><span class="meta">${role} · ${esc(a.date)}${a.updatedAt ? ` · Diperbarui ${esc(a.updatedAt)}` : ""}</span></span></div></header><img class="article-hero" src="${a.image || IMAGE.city}" alt=""><div class="caption">Ilustrasi: Kodya.id / Unsplash</div>${a.category === "Podcast" && a.media ? `<div class="article-media">${podcastPlayer(a.media, a.title, a.image)}</div>` : a.category === "Video" && a.media ? `<div class="article-media"><video controls preload="metadata" poster="${esc(a.image || IMAGE.city)}" src="${esc(a.media)}"></video></div>` : ""}<div class="article-layout"><article class="article-body">${a.content ? formatArticleBody(a.content) : `<p>${esc(a.excerpt)}</p>`}<div class="section"><div class="section-head"><h2>Artikel Terkait</h2></div><div class="editorial-grid">${rel.map(storyCard).join("")}</div></div></article><aside><section class="article-snapshot"><h4>MARKET SNAPSHOT</h4><div><span>IHSG</span><strong class="up">6.319 ▲</strong></div><div><span>USD/IDR</span><strong class="down">18.027 ▼</strong></div><div><span>Gold</span><strong class="up">4.080 ▲</strong></div></section><div style="margin-top:30px">${sidebars(published())}</div></aside></div></div></main>`, a.category); }
 
 function searchPage(query = "") { const q = query.trim().toLowerCase(); const result = published().filter(a => !q || `${a.title} ${a.excerpt} ${a.category}`.toLowerCase().includes(q)); return publicChrome(`<main class="page"><div class="shell search-page"><h1>Temukan perspektif baru.</h1><form class="search-big" onsubmit="doSearch(event)"><input name="q" autofocus value="${esc(query)}" placeholder="Cari berita, analisis, data, atau topik..."><button class="button">Cari</button></form><div class="search-filters"><button class="filter active">Semua</button><button class="filter">Berita</button><button class="filter">Analisis</button><button class="filter">Opini</button><button class="filter">Video</button></div><p class="meta">${q ? `${result.length} hasil untuk “${esc(query)}”` : "Artikel, analisis, data, dan percakapan Kodya.id"}</p><section class="article-list">${result.length ? result.map(listItem).join("") : `<div class="empty">Tidak ada hasil yang cocok. Coba kata kunci lain.</div>`}</section></div></main>`); }
 
