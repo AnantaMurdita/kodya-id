@@ -697,8 +697,8 @@ function adminChrome(content, section = "dashboard") {
     ["EDITORIAL & ANALYTICS", [["Media Library", "media"], ["Kategori", "categories"], ["Penulis", "authors"], ["Traffic & Analytics", "analytics"]]],
     ["SYSTEM", [["Pengaturan", "settings"]]]
   ];
-  // Penulis hanya melihat pengelolaan berita (buat & edit); sisanya khusus Super Admin.
-  const allowed = isAdmin ? null : ["articles", "new", "drafts", "scheduled"];
+  // Penulis: pengelolaan berita (buat & edit) + media library untuk foto artikel; sisanya khusus Super Admin.
+  const allowed = isAdmin ? null : ["articles", "new", "drafts", "scheduled", "media"];
   const groups = allowed ? allGroups.map(([label, items]) => [label, items.filter(([l, k]) => allowed.includes(k))]) : allGroups;
   return `<main class="admin"><div class="mobile-admin-top"><a class="brand" href="#/admin">kodya<em>.id</em></a><span class="mobile-admin-actions"><a href="#/">Lihat situs →</a><a href="#/admin/login" onclick="logout()">Keluar</a><button class="mobile-admin-burger" onclick="toggleAdminMenu()" aria-label="Buka menu admin">☰</button></span></div><nav class="mobile-admin-menu" id="mobile-admin-menu">${groups.map(([label, items]) => items.length ? `<div class="admin-menu-label">${label}</div>${items.map(x => adminLink(x, section)).join("")}` : "").join("")}</nav><div class="admin-shell"><aside class="admin-side"><a class="brand" href="#/admin">kodya<em>.id</em></a><div class="admin-user"><img class="avatar" src="${esc(me.avatar || DEFAULT_AVATAR)}" alt=""><span><strong>${esc(me.name || "Admin Kodya")}</strong><small>${esc(me.email || "")} · ${esc(me.role || "Super Admin")}</small></span></div>${groups.map(([label, items]) => items.length ? `<div class="admin-menu-label">${label}</div>${items.map(x => adminLink(x, section)).join("")}` : "").join("")}<a class="admin-link" href="#/">← Lihat Situs</a><a class="admin-link" href="#/admin/login" onclick="logout()">← Logout</a></aside><section class="admin-main">${content}</section></div></main>`;
 }
@@ -837,7 +837,8 @@ async function route() {
     else if (parts[1] === "edit") app.innerHTML = articleEditor(parts[2]);
     else if (isAdminUser && parts[1] === "new-podcast") app.innerHTML = articleEditor(null, "Podcast");
     else if (isAdminUser && parts[1] === "new-video") app.innerHTML = articleEditor(null, "Video");
-    else if (isAdminUser && ["media", "categories", "authors", "analytics", "settings"].includes(parts[1])) app.innerHTML = adminUtility(parts[1]);
+    else if (parts[1] === "media") app.innerHTML = adminMedia();
+    else if (isAdminUser && ["categories", "authors", "analytics", "settings"].includes(parts[1])) app.innerHTML = adminUtility(parts[1]);
     else app.innerHTML = isAdminUser ? dashboard() : adminArticles("all");
     return;
   }
