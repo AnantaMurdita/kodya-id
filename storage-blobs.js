@@ -11,7 +11,18 @@ function mimeFromName(name) {
 }
 
 function blobStorage() {
-  const store = getStore(STORE_NAME);
+  let store;
+  try {
+    // Deteksi otomatis: runtime Netlify Functions menyuntikkan konteks Blobs.
+    store = getStore(STORE_NAME);
+  } catch (error) {
+    // Fallback manual bila runtime tidak menyuntikkan konteks Blobs (mis. deploy tanpa link situs):
+    // isi NETLIFY_BLOBS_SITE_ID (atau NETLIFY_SITE_ID / SITE_ID) + NETLIFY_BLOBS_TOKEN (atau NETLIFY_ACCESS_TOKEN) di env Netlify.
+    const siteID = process.env.NETLIFY_BLOBS_SITE_ID || process.env.NETLIFY_SITE_ID || process.env.SITE_ID;
+    const token = process.env.NETLIFY_BLOBS_TOKEN || process.env.NETLIFY_ACCESS_TOKEN;
+    if (!siteID || !token) throw error;
+    store = getStore({ name: STORE_NAME, siteID, token });
+  }
 
   return {
     async getJSON(key, fallback) {
