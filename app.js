@@ -690,8 +690,8 @@ function videoPage() {
   const vids = published().filter(a => a.category === "Video");
   const lead = vids[0];
   return publicChrome(`<main class="page"><div class="shell"><header class="category-title"><span class="tag">KODYA.TV</span><h1>Video</h1><p>Cerita, wawancara, dan penjelasan visual pilihan redaksi.</p></header>
-    ${lead ? `<div class="media-hero"><img src="${lead.image}" alt=""><div class="media-hero-play" onclick="playVideo(${lead.id})">▶</div><span class="media-duration">05:42</span><div class="media-hero-copy"><h2>${esc(lead.title)}</h2><p>${esc(lead.excerpt)}</p></div></div>` : `<div class="empty" style="padding:50px 0">Belum ada video. Video pertama akan tampil di sini.</div>`}
-    <section class="section"><div class="section-head"><h2>Semua Video</h2></div><div class="video-grid">${vids.map((v, i) => `<article class="video-card"><div class="video-thumb" onclick="playVideo(${v.id})"><img src="${v.image}" alt="" loading="lazy"><span class="media-play">▶</span><span class="media-duration">${i === 0 ? "05:42" : "08:13"}</span></div><h3>${esc(v.title)}</h3><p class="meta">${esc(v.date)} · ${esc(v.views)} views</p></article>`).join("")}</div></section>
+    ${lead ? `<div class="media-hero" data-media="${esc(lead.media || "")}"><img src="${lead.image}" alt=""><div class="media-hero-play" onclick="playVideo(${lead.id})">▶</div><span class="media-duration">···</span><div class="media-hero-copy"><h2>${esc(lead.title)}</h2><p>${esc(lead.excerpt)}</p></div></div>` : `<div class="empty" style="padding:50px 0">Belum ada video. Video pertama akan tampil di sini.</div>`}
+    <section class="section"><div class="section-head"><h2>Semua Video</h2></div><div class="video-grid">${vids.map(v => `<article class="video-card"><div class="video-thumb" data-media="${esc(v.media || "")}" onclick="playVideo(${v.id})"><img src="${v.image}" alt="" loading="lazy"><span class="media-play">▶</span><span class="media-duration">···</span></div><h3>${esc(v.title)}</h3><p class="meta">${esc(v.date)} · ${esc(v.views)} views</p></article>`).join("")}</div></section>
   </div></main>`, "Video");
 }
 function podcastPage() {
@@ -896,6 +896,7 @@ async function route() {
   else app.innerHTML = home();
   if (document.getElementById("tv-chart")) initTradingView("tv-chart", activeSymbol);
   if (document.getElementById("hero-track")) startHeroSlider();
+  loadVideoDurations();
   const topik = Number(new URLSearchParams(location.hash.split("?")[1] || "").get("topik"));
   if (topik) setTimeout(() => scrollToThread(topik), 400);
   const opiniId = Number(new URLSearchParams(location.hash.split("?")[1] || "").get("opini"));
@@ -918,6 +919,22 @@ window.newsletter = e => { e.preventDefault(); e.target.reset(); toast("Terima k
 window.toggleMobileMenu = () => { const m = document.getElementById("mobile-menu"); const b = document.querySelector(".menu-button"); if (!m) return; const open = m.classList.toggle("open"); if (b) b.classList.toggle("open", open); };
 window.closeMobileMenu = () => { const m = document.getElementById("mobile-menu"); if (m) m.classList.remove("open"); const b = document.querySelector(".menu-button"); if (b) b.classList.remove("open"); };
 window.playVideo = id => { const v = published().find(x => x.id === Number(id)); if (!v) return; const modal = document.createElement("div"); modal.className = "reader-modal"; modal.innerHTML = `<div class="reader-backdrop" onclick="closeReader()"></div><div class="reader-panel media-panel"><button class="reader-close" onclick="closeReader()" aria-label="Tutup">✕</button><div class="reader-content"><h2>${esc(v.title)}</h2><p class="meta">${esc(v.excerpt)}</p><div class="video-frame"><video controls autoplay poster="${esc(v.image || IMAGE.city)}" src="${v.media || DEMO_VIDEO}"></video></div></div></div>`; document.body.appendChild(modal); document.body.classList.add("reader-open"); };
+// Baca durasi asli file video (dipakai di halaman Video untuk badge durasi pojok)
+function fmtDuration(s) { if (!isFinite(s) || s < 0) return "0:00"; s = Math.floor(s); const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), sec = s % 60; return (h ? h + ":" + String(m).padStart(2, "0") : m) + ":" + String(sec).padStart(2, "0"); }
+function loadVideoDurations() {
+  document.querySelectorAll("[data-media]").forEach(el => {
+    const src = el.dataset.media;
+    const badge = el.querySelector(".media-duration");
+    if (!src || !badge || el.dataset.durLoaded) return;
+    el.dataset.durLoaded = "1";
+    const v = document.createElement("video");
+    v.preload = "metadata";
+    v.muted = true;
+    v.onloadedmetadata = () => { badge.textContent = fmtDuration(v.duration); v.removeAttribute("src"); v.load(); };
+    v.onerror = () => { badge.textContent = ""; };
+    v.src = src;
+  });
+}
 // Ambil frame video sebagai thumbnail (dipakai di editor video)
 window.openVideoThumbPicker = () => {
   const src = (document.querySelector('form.editor [name="media"]') || {}).value;

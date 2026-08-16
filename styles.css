@@ -92,8 +92,8 @@ a { color: inherit; text-decoration: none; }
 .video-thumb img { width: 100%; height: 100%; object-fit: cover; transition: transform .35s; }
 .video-thumb:hover img { transform: scale(1.05); }
 .video-card h3 { font: 20px/1.12 var(--serif); font-weight: 400; margin: 10px 0 4px; overflow-wrap: break-word; }
-.media-play { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 52px; height: 52px; border-radius: 50%; background: var(--orange); color: #fff; display: grid; place-items: center; font-size: 17px; padding-left: 3px; box-shadow: 0 4px 14px #0006; transition: transform .2s; }
-.video-thumb:hover .media-play { transform: translate(-50%, -50%) scale(1.1); }
+.media-play { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #fff; font-size: 46px; line-height: 1; display: grid; place-items: center; text-shadow: 0 2px 16px #000a, 0 0 2px #000a; opacity: .95; transition: transform .2s, opacity .2s; }
+.video-thumb:hover .media-play { transform: translate(-50%, -50%) scale(1.12); opacity: 1; }
 .video-frame { position: relative; aspect-ratio: 16/9; background: #000; margin-top: 14px; }
 .video-frame video { width: 100%; height: 100%; display: block; }
 .media-panel { width: min(880px, 100%); }
