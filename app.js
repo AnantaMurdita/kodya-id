@@ -1003,4 +1003,5 @@ async function boot() {
   }
   route();
 }
-window.addEventListener("hashchange", route); boot();
+// Reload penuh setiap ganti halaman (hash berubah) agar isi selalu ter-update.
+window.addEventListener("hashchange", () => location.reload()); boot();
