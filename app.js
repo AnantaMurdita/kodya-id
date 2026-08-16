@@ -14,7 +14,7 @@ const categories = ["Beranda", "Politik", "Ekonomi", "Bisnis", "Pasar & Data", "
 let app = document.querySelector("#app");
 let activeMarket = "Indonesia";
 
-const DEFAULT_AVATAR = "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=100&q=80";
+const DEFAULT_AVATAR = "/default-avatar.svg";
 
 // ---------- Lapisan data server-side ----------
 // Seluruh konten (artikel, opini, media, kategori, akun) tersimpan di server

@@ -64,7 +64,7 @@ function seedAdmin(env) {
     email: String(env.ADMIN_EMAIL || "admin@kodya.id").toLowerCase().trim(),
     password: hashPassword(env.ADMIN_PASSWORD || "adminredaksi2026"),
     role: ADMIN_ROLE,
-    avatar: ""
+    avatar: "/default-avatar.svg"
   };
 }
 
@@ -118,7 +118,7 @@ async function handleApi({ method, path, query = new URLSearchParams(), headers 
       if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return fail(400, "Format email tidak valid.");
       if (password.length < 6) return fail(400, "Password minimal 6 karakter.");
       if (users.some(u => u.email.toLowerCase() === email)) return fail(409, "Email sudah terdaftar. Silakan masuk.");
-      const user = { id: nextId(users), name, email, password: hashPassword(password), role: "Pembaca", avatar: "" };
+      const user = { id: nextId(users), name, email, password: hashPassword(password), role: "Pembaca", avatar: "/default-avatar.svg" };
       users = [...users, user];
       await storage.setJSON("users", users);
       return json(200, { ok: true, token: signToken(user, secret(env)), user: publicUser(user) });
@@ -164,7 +164,7 @@ async function handleApi({ method, path, query = new URLSearchParams(), headers 
       if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return fail(400, "Format email tidak valid.");
       if (password.length < 6) return fail(400, "Password minimal 6 karakter.");
       if (users.some(u => u.email.toLowerCase() === email)) return fail(409, "Email sudah terdaftar.");
-      const user = { id: nextId(users), name, email, password: hashPassword(password), role: "Penulis", avatar: "" };
+      const user = { id: nextId(users), name, email, password: hashPassword(password), role: "Penulis", avatar: "/default-avatar.svg" };
       users = [...users, user];
       await storage.setJSON("users", users);
       return json(200, { ok: true, user: publicUser(user) });
