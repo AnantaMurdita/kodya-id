@@ -235,6 +235,7 @@ async function handleApi({ method, path, query = new URLSearchParams(), headers 
     if (path === "/api/stats" && method === "GET") {
       const me = currentUser();
       if (!me) return fail(401, "Sesi tidak valid. Silakan masuk kembali.");
+      if (me.role !== ADMIN_ROLE) return fail(403, "Hanya Super Admin yang dapat melihat statistik.");
       const stats = await storage.getJSON("stats", {});
       return json(200, { ok: true, stats: { total: Number(stats.total) || 0, daily: stats.daily || {}, articles: stats.articles || {} } });
     }
