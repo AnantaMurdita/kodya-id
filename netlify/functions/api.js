@@ -1,6 +1,7 @@
 // ---------- Netlify Function: semua /api/* diarahkan ke handler bersama dengan storage Blobs ----------
 const { handleApi } = require("../../api-handler");
 const { blobStorage } = require("../../storage-blobs");
+const { connectLambda } = require("@netlify/blobs");
 
 function safeParse(buf) {
   if (!buf || !buf.length) return {};
@@ -8,6 +9,8 @@ function safeParse(buf) {
 }
 
 exports.handler = async (event) => {
+  // Sambungkan kredensial Netlify Blobs yang dikirim runtime lewat event (format invoke terbaru).
+  try { if (event && event.blobs) connectLambda(event); } catch { /* lanjut tanpa konteks */ }
   const rawBody = event.body ? Buffer.from(event.body, event.isBase64Encoded ? "base64" : "utf8") : Buffer.alloc(0);
   const headers = {};
   for (const [k, v] of Object.entries(event.headers || {})) headers[k.toLowerCase()] = v;
