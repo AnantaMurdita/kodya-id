@@ -790,7 +790,8 @@ function articleEditor(id = null, presetCategory = null) {
   const mediaRowStyle = isMedia ? "" : "display:none";
   const formClass = isPodcast ? "editor editor--podcast" : isVideo ? "editor editor--video" : "editor";
   const publishLabel = existing ? "Simpan Perubahan" : isPodcast ? "Terbitkan Podcast" : isVideo ? "Terbitkan Video" : "Publish Berita";
-  return adminChrome(`<header class="admin-header"><div><h1>${heading}${badge}</h1><p>${sub}</p></div><a href="#/admin/articles" class="button ghost">← Semua Berita</a></header><form class="${formClass}" onsubmit="saveArticle(event, ${id || "null"})"><section class="form-card"><div><label for="title">Judul</label><input class="title-input" id="title" name="title" value="${esc(a.title)}" placeholder="Masukkan judul berita..." required></div><div><label>Ringkasan</label><textarea class="form-control" name="excerpt" rows="3" placeholder="Tulis ringkasan singkat...">${esc(a.excerpt)}</textarea></div>${isMedia ? "" : `<div><label>Isi artikel</label><div class="editor-toolbar"><button type="button"><b>B</b></button><button type="button"><i>I</i></button><button type="button">H2</button><button type="button">❝</button><button type="button">↗</button><button type="button">☷</button></div><textarea class="content-area" name="content" placeholder="Mulai menulis berita Anda di sini...">${esc(a.content || "")}</textarea></div><div><label>SEO Title</label><input class="form-control" name="seo" value="${esc(a.title)}" placeholder="Judul untuk mesin pencari"></div>`}</section><aside class="form-card form-side"><div><label>Kategori</label><select class="form-control" name="category" onchange="updateMediaField(this)">${categories.slice(1,11).map(c=>`<option ${a.category===c?"selected":""}>${c}</option>`).join("")}</select></div><div><label>Penulis</label><select class="form-control" name="author"><option selected>${esc(session()?.name || siteAuthor())}</option></select></div><div><label>URL gambar unggulan</label><input class="form-control" name="image" value="${esc(a.image)}" placeholder="https://... atau pilih foto di bawah"><label class="upload-btn" style="margin-top:10px" for="article-image-file"><span class="upload-icon">↑</span> Upload Foto dari Perangkat</label><input type="file" id="article-image-file" class="upload-input" accept="image/*" onchange="uploadArticleImage(this)"><button type="button" class="button ghost" style="margin-top:8px;display:block" onclick="openMediaPicker()">Pilih dari Media Library</button></div><div id="media-field-row" style="${mediaRowStyle}"><label id="media-field-label">${mediaLabel}</label><label class="upload-btn" id="media-upload-btn" for="media-file-input"><span class="upload-icon">↑</span> ${uploadBtn}</label><input type="file" id="media-file-input" class="upload-input" accept="${mediaAccept}" onchange="uploadArticleMedia(this)"><span class="upload-file-name" id="media-file-name">${a.media ? "File: " + esc(String(a.media).split("/").pop()) : "Belum ada file dipilih"}</span><input class="form-control" name="media" value="${esc(a.media || "")}" placeholder="URL file media" style="margin-top:8px"><p class="panel-subtitle" id="media-msg"></p>${isVideo ? `<button type="button" class="button ghost" id="thumb-from-video" style="margin-top:10px;width:100%" onclick="openVideoThumbPicker()">🎞️ Ambil Frame Video sebagai Thumbnail</button><p class="panel-subtitle">Jadikan salah satu frame video sebagai gambar preview (thumbnail) di halaman Video.</p>` : ""}</div><label class="check-row"><input type="checkbox" name="featured" ${a.featured ? "checked" : ""}> Featured article</label><label class="check-row"><input type="checkbox" name="breaking" ${a.breaking ? "checked" : ""}> Breaking news</label><button class="button" name="action" value="publish">${publishLabel}</button><button class="button ghost" name="action" value="draft">Simpan sebagai Draft</button></aside></form>`, isPodcast ? "new-podcast" : isVideo ? "new-video" : "new");
+  if (isVideo && a.media) setTimeout(() => generateVideoThumbnails(a.media), 60);
+  return adminChrome(`<header class="admin-header"><div><h1>${heading}${badge}</h1><p>${sub}</p></div><a href="#/admin/articles" class="button ghost">← Semua Berita</a></header><form class="${formClass}" onsubmit="saveArticle(event, ${id || "null"})"><section class="form-card"><div><label for="title">Judul</label><input class="title-input" id="title" name="title" value="${esc(a.title)}" placeholder="Masukkan judul berita..." required></div><div><label>Ringkasan</label><textarea class="form-control" name="excerpt" rows="3" placeholder="Tulis ringkasan singkat...">${esc(a.excerpt)}</textarea></div>${isMedia ? "" : `<div><label>Isi artikel</label><div class="editor-toolbar"><button type="button"><b>B</b></button><button type="button"><i>I</i></button><button type="button">H2</button><button type="button">❝</button><button type="button">↗</button><button type="button">☷</button></div><textarea class="content-area" name="content" placeholder="Mulai menulis berita Anda di sini...">${esc(a.content || "")}</textarea></div><div><label>SEO Title</label><input class="form-control" name="seo" value="${esc(a.title)}" placeholder="Judul untuk mesin pencari"></div>`}</section><aside class="form-card form-side"><div><label>Kategori</label><select class="form-control" name="category" onchange="updateMediaField(this)">${categories.slice(1,11).map(c=>`<option ${a.category===c?"selected":""}>${c}</option>`).join("")}</select></div><div><label>Penulis</label><select class="form-control" name="author"><option selected>${esc(session()?.name || siteAuthor())}</option></select></div><div><label>URL gambar unggulan</label><input class="form-control" name="image" value="${esc(a.image)}" placeholder="https://... atau pilih foto di bawah"><label class="upload-btn" style="margin-top:10px" for="article-image-file"><span class="upload-icon">↑</span> Upload Foto dari Perangkat</label><input type="file" id="article-image-file" class="upload-input" accept="image/*" onchange="uploadArticleImage(this)"><button type="button" class="button ghost" style="margin-top:8px;display:block" onclick="openMediaPicker()">Pilih dari Media Library</button></div><div id="media-field-row" style="${mediaRowStyle}"><label id="media-field-label">${mediaLabel}</label><label class="upload-btn" id="media-upload-btn" for="media-file-input"><span class="upload-icon">↑</span> ${uploadBtn}</label><input type="file" id="media-file-input" class="upload-input" accept="${mediaAccept}" onchange="uploadArticleMedia(this)"><span class="upload-file-name" id="media-file-name">${a.media ? "File: " + esc(String(a.media).split("/").pop()) : "Belum ada file dipilih"}</span><input class="form-control" name="media" value="${esc(a.media || "")}" placeholder="URL file media" style="margin-top:8px"><p class="panel-subtitle" id="media-msg"></p>${isVideo ? `<div id="video-thumb-options" class="video-thumb-options"><p class="panel-subtitle" style="margin-bottom:8px">Thumbnail otomatis dari video — klik salah satu frame, atau upload gambar sendiri di atas:</p><div id="video-thumb-list" class="video-thumb-list"><span class="panel-subtitle">Unggah video dulu untuk melihat opsi thumbnail otomatis.</span></div></div>` : ""}</div><label class="check-row"><input type="checkbox" name="featured" ${a.featured ? "checked" : ""}> Featured article</label><label class="check-row"><input type="checkbox" name="breaking" ${a.breaking ? "checked" : ""}> Breaking news</label><button class="button" name="action" value="publish">${publishLabel}</button><button class="button ghost" name="action" value="draft">Simpan sebagai Draft</button></aside></form>`, isPodcast ? "new-podcast" : isVideo ? "new-video" : "new");
 }
 window.updateMediaField = sel => {
   const label = document.getElementById("media-field-label");
@@ -814,7 +815,49 @@ window.uploadArticleMedia = async input => {
     if (nameEl) nameEl.textContent = "File terunggah: " + d.url.split("/").pop();
     if (msg) msg.textContent = "File media terunggah.";
     toast("File media terunggah.");
+    // Video → tampilkan opsi thumbnail otomatis ala YouTube
+    if (file.type && file.type.startsWith("video/")) generateVideoThumbnails(d.url);
   } else if (msg) msg.textContent = d.error || "Gagal mengunggah file.";
+};
+// Thumbnail otomatis ala YouTube: ambil frame 25% / 50% / 75% dari video
+window.__videoFrames = [];
+async function generateVideoThumbnails(src) {
+  const list = document.getElementById("video-thumb-list");
+  if (!list || !src) return;
+  list.innerHTML = '<span class="panel-subtitle">Membaca video untuk opsi thumbnail…</span>';
+  try {
+    const v = document.createElement("video");
+    v.preload = "metadata";
+    v.muted = true;
+    v.playsInline = true;
+    v.crossOrigin = "anonymous";
+    await new Promise((res, rej) => { v.onloadedmetadata = res; v.onerror = rej; v.src = src; });
+    const dur = v.duration;
+    const frames = [];
+    for (const p of [0.25, 0.5, 0.75]) {
+      v.currentTime = dur * p;
+      await new Promise(res => { v.onseeked = res; });
+      const c = document.createElement("canvas");
+      c.width = 640; c.height = 360;
+      c.getContext("2d").drawImage(v, 0, 0, 640, 360);
+      frames.push(c.toDataURL("image/jpeg", 0.8));
+    }
+    window.__videoFrames = frames;
+    list.innerHTML = frames.map((f, i) => `<button type="button" class="vt-option" onclick="pickVideoFrame(${i})"><img src="${f}" alt="Thumbnail ${i + 1}"><span>Frame ${i + 1}</span></button>`).join("");
+  } catch (e) {
+    list.innerHTML = '<span class="panel-subtitle">Tidak dapat membaca video untuk thumbnail otomatis.</span>';
+  }
+}
+window.pickVideoFrame = async i => {
+  const dataUrl = (window.__videoFrames || [])[i];
+  if (!dataUrl) return;
+  const blob = await (await fetch(dataUrl)).blob();
+  const d = await uploadFile(blob);
+  if (!d.ok) return toast(d.error || "Gagal mengunggah thumbnail.");
+  const field = document.querySelector('form.editor [name="image"]');
+  if (field) field.value = d.url;
+  document.querySelectorAll(".vt-option").forEach((b, j) => b.classList.toggle("active", j === i));
+  toast("Thumbnail dipilih.");
 };
 
 function adminUtility(page) { if (page === "categories") return adminCategories(); if (page === "authors") return adminAuthors(); if (page === "settings") return adminSettings(); if (page === "media") return adminMedia(); return adminAnalytics(); }
