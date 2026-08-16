@@ -829,7 +829,8 @@ async function route() {
     if (parts[1] === "login" || !session()) return loginPage();
     // Akun publik (Pembaca) tidak punya akses dashboard — arahkan ke beranda.
     if (session().role === "Pembaca") { location.hash = "#/"; return; }
-    await Promise.all([ensureArticles(), ensureUsers(), ensureForum(), ensureMedia(), ensureCategories(), ensureStats()]);
+    // Muat ulang data dari server setiap ganti halaman agar isi selalu terbaru.
+    await Promise.all([ensureArticles(true), ensureUsers(true), ensureForum(true), ensureMedia(true), ensureCategories(true), ensureStats(true)]);
     const isAdminUser = session().role === "Super Admin";
     if (!parts[1]) app.innerHTML = isAdminUser ? dashboard() : adminArticles("all");
     else if (["articles", "drafts", "scheduled"].includes(parts[1])) app.innerHTML = adminArticles(parts[1] === "articles" ? "all" : parts[1]);
@@ -844,11 +845,12 @@ async function route() {
   if (root === "register") return registerPage();
   if (root === "profil") {
     if (!session()) return loginPage();
-    await Promise.all([ensureArticles(), ensureForum(), ensureOpinions()]);
+    await Promise.all([ensureArticles(true), ensureForum(true), ensureOpinions(true)]);
     app.innerHTML = profilPage();
     return;
   }
-  await Promise.all([ensureArticles(), ensureForum(), ensureOpinions(), ensureMedia(), ensureCategories()]);
+  // Muat ulang data dari server setiap ganti halaman agar isi selalu terbaru.
+  await Promise.all([ensureArticles(true), ensureForum(true), ensureOpinions(true), ensureMedia(true), ensureCategories(true)]);
   if (root === "kategori") {
     const cat = (parts[1]?.split("?")[0] || "Ekonomi").split("-").map(s => s[0].toUpperCase() + s.slice(1)).join(" ");
     if (cat === "Podcast") app.innerHTML = podcastPage();
