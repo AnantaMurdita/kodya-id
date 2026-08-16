@@ -187,8 +187,11 @@ async function handleApi({ method, path, query = new URLSearchParams(), headers 
     // ---------- Artikel ----------
     if (path === "/api/articles" && method === "GET") {
       const articles = await storage.getJSON("articles", []);
+      const stats = await storage.getJSON("stats", {});
+      const viewsMap = (stats && stats.articles) || {};
       const me = currentUser();
-      const list = me ? articles : (Array.isArray(articles) ? articles.filter(a => a && a.status === "Published") : []);
+      const list = (me ? articles : (Array.isArray(articles) ? articles.filter(a => a && a.status === "Published") : []))
+        .map(a => ({ ...a, views: viewsMap[a.id] || 0 }));
       return json(200, { ok: true, articles: list });
     }
 
@@ -214,6 +217,26 @@ async function handleApi({ method, path, query = new URLSearchParams(), headers 
       const articles = await storage.getJSON("articles", []);
       await storage.setJSON("articles", articles.filter(a => Number(a.id) !== id));
       return json(200, { ok: true });
+    }
+
+    // ---------- Statistik pengunjung (real, tersimpan di server) ----------
+    if (path === "/api/views" && method === "POST") {
+      const id = Number(body && body.id) || null;
+      const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Jakarta" });
+      const stats = await storage.getJSON("stats", {});
+      stats.daily = stats.daily || {};
+      stats.articles = stats.articles || {};
+      stats.total = (Number(stats.total) || 0) + 1;
+      stats.daily[today] = (Number(stats.daily[today]) || 0) + 1;
+      if (id) stats.articles[id] = (Number(stats.articles[id]) || 0) + 1;
+      await storage.setJSON("stats", stats);
+      return json(200, { ok: true });
+    }
+    if (path === "/api/stats" && method === "GET") {
+      const me = currentUser();
+      if (!me) return fail(401, "Sesi tidak valid. Silakan masuk kembali.");
+      const stats = await storage.getJSON("stats", {});
+      return json(200, { ok: true, stats: { total: Number(stats.total) || 0, daily: stats.daily || {}, articles: stats.articles || {} } });
     }
 
     // ---------- Forum diskusi & Opini publik, media, kategori ----------

@@ -45,6 +45,8 @@ function categoriesList() { return __categories || categories; }
 async function saveCategories(list) { __categories = list; await apiSend("/api/categories", "POST", { categories: list }); }
 async function ensureUsers(force = false) { if (__users && !force) return __users; const d = await apiGet("/api/users"); __users = Array.isArray(d.users) ? d.users : []; return __users; }
 function users() { return __users || []; }
+let __stats = null;
+async function ensureStats(force = false) { if (__stats && !force) return __stats; const d = await apiGet("/api/stats"); __stats = (d && d.ok && d.stats) || { total: 0, daily: {}, articles: {} }; return __stats; }
 async function uploadFile(file) {
   const res = await fetch("/api/upload", { method: "POST", headers: { "Content-Type": file.type || "application/octet-stream", ...apiHeaders() }, body: file });
   return res.json().catch(() => ({ ok: false, error: "Tidak dapat terhubung ke server." }));
@@ -700,7 +702,42 @@ function adminChrome(content, section = "dashboard") {
 }
 function adminLink(x, active) { return `<a class="admin-link ${x[1] === active ? "active" : ""}" href="#/admin/${x[1] === "dashboard" ? "" : x[1]}">${x[0]}</a>`; }
 
-function dashboard() { const all = articles(); const pub = all.filter(a=>a.status === "Published").length, draft = all.filter(a=>a.status === "Draft").length, schedule = all.filter(a=>a.status === "Scheduled").length; return adminChrome(`<header class="admin-header"><div><h1>Good morning, Admin</h1><p>Berikut performa Kodya.id hari ini.</p></div><a href="#/admin/new" class="button">+ Tambah Berita</a></header><div class="admin-cards"><div class="admin-card"><span>Total Artikel</span><strong>${all.length.toLocaleString("id-ID")}</strong><small>▲ 8,4% dari bulan lalu</small></div><div class="admin-card"><span>Published</span><strong>${pub.toLocaleString("id-ID")}</strong><small>▲ 5,2% dari bulan lalu</small></div><div class="admin-card"><span>Draft</span><strong>${draft.toLocaleString("id-ID")}</strong><small style="color:#8a683b">Perlu ditinjau</small></div><div class="admin-card"><span>Total Views</span><strong>2.4M</strong><small>▲ 12,8% dari bulan lalu</small></div></div><div class="admin-grid"><section class="admin-panel"><h2 class="panel-title">Traffic Overview</h2><p class="panel-subtitle">Page views dalam 7 hari terakhir</p><div class="chart"><svg viewBox="0 0 700 210" preserveAspectRatio="none"><path class="chart-area" d="M0 170 C60 160 80 120 125 135 S180 115 220 130 S290 45 340 83 S400 108 455 70 S520 100 570 40 S645 28 700 23 L700 210 L0 210Z"></path><path class="chart-line" d="M0 170 C60 160 80 120 125 135 S180 115 220 130 S290 45 340 83 S400 108 455 70 S520 100 570 40 S645 28 700 23"></path></svg></div><div class="chart-meta"><span>30 Jul</span><span>31 Jul</span><span>1 Agt</span><span>2 Agt</span><span>3 Agt</span><span>4 Agt</span><span>5 Agt</span></div></section><section class="admin-panel"><h2 class="panel-title">Top Articles</h2><p class="panel-subtitle">Artikel paling banyak dibaca</p>${published().slice(0,3).map((a,i)=>`<div class="top-article"><strong>0${i+1}</strong><p>${esc(a.title)}<br><small>${a.views} views</small></p></div>`).join("")}</section></div>`, "dashboard"); }
+// ---------- Statistik pengunjung (real) ----------
+function viewsChart(daily) {
+  const points = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(Date.now() - i * 86400000);
+    const key = d.toLocaleDateString("en-CA", { timeZone: "Asia/Jakarta" });
+    points.push({ label: d.toLocaleDateString("id-ID", { timeZone: "Asia/Jakarta", day: "numeric", month: "short" }), v: (daily && daily[key]) || 0 });
+  }
+  const max = Math.max(1, ...points.map(p => p.v));
+  const W = 700, H = 210, pad = 12;
+  const pts = points.map((p, i) => {
+    const px = pad + (i * (W - pad * 2)) / (points.length - 1);
+    const py = H - pad - (p.v / max) * (H - pad * 2);
+    return [px, py];
+  });
+  const line = pts.map((p, i) => `${i === 0 ? "M" : "L"}${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join(" ");
+  const area = `${line} L${pts[pts.length - 1][0].toFixed(1)} ${H} L${pts[0][0].toFixed(1)} ${H} Z`;
+  return { line, area, labels: points.map(p => p.label), points };
+}
+async function trackView(parts) {
+  try {
+    const hash = location.hash;
+    if (window.__lastTrackedHash === hash) return; // jangan hitung render ulang (mis. ganti tab pasar)
+    window.__lastTrackedHash = hash;
+    const id = parts[0] === "artikel" ? (Number(parts[1]) || null) : null;
+    fetch("/api/views", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) }).catch(() => { });
+  } catch { /* abaikan */ }
+}
+function dashboard() {
+  const all = articles();
+  const pub = all.filter(a => a.status === "Published").length, draft = all.filter(a => a.status === "Draft").length;
+  const totalViews = (__stats && __stats.total) || 0;
+  const views = viewsChart((__stats && __stats.daily) || {});
+  const top = [...all].sort((a, b) => (b.views || 0) - (a.views || 0)).slice(0, 3);
+  return adminChrome(`<header class="admin-header"><div><h1>Good morning, Admin</h1><p>Berikut performa Kodya.id hari ini.</p></div><a href="#/admin/new" class="button">+ Tambah Berita</a></header><div class="admin-cards"><div class="admin-card"><span>Total Artikel</span><strong>${all.length.toLocaleString("id-ID")}</strong></div><div class="admin-card"><span>Published</span><strong>${pub.toLocaleString("id-ID")}</strong></div><div class="admin-card"><span>Draft</span><strong>${draft.toLocaleString("id-ID")}</strong><small style="color:#8a683b">Perlu ditinjau</small></div><div class="admin-card"><span>Total Views</span><strong>${totalViews.toLocaleString("id-ID")}</strong><small>▲ Real-time</small></div></div><div class="admin-grid"><section class="admin-panel"><h2 class="panel-title">Traffic Overview</h2><p class="panel-subtitle">Page views 7 hari terakhir (data real)</p><div class="chart"><svg viewBox="0 0 700 210" preserveAspectRatio="none"><path class="chart-area" d="${views.area}"></path><path class="chart-line" d="${views.line}"></path></svg></div><div class="chart-meta">${views.labels.map(l => `<span>${l}</span>`).join("")}</div></section><section class="admin-panel"><h2 class="panel-title">Top Articles</h2><p class="panel-subtitle">Artikel paling banyak dibaca</p>${top.length ? top.map((a, i) => `<div class="top-article"><strong>0${i + 1}</strong><p>${esc(a.title)}<br><small>${(a.views || 0).toLocaleString("id-ID")} views</small></p></div>`).join("") : `<p class="panel-subtitle">Belum ada views.</p>`}</section></div>`, "dashboard");
+}
 
 function adminArticles(type = "all") { let data = articles(); if (type === "drafts") data=data.filter(a=>a.status==="Draft"); if (type === "scheduled") data=data.filter(a=>a.status==="Scheduled"); const label = type === "drafts" ? "Draft" : type === "scheduled" ? "Terjadwal" : "Semua Berita"; return adminChrome(`<header class="admin-header"><div><h1>${label}</h1><p>Kelola seluruh konten yang tampil di Kodya.id.</p></div><div style="display:flex;gap:10px"><button class="button ghost" onclick="deleteAllArticles()">Hapus Semua</button><a href="#/admin/new" class="button">+ Tambah Berita</a></div></header><section class="admin-table-wrap"><div class="toolbar"><input oninput="filterAdminTable(this.value)" placeholder="Cari judul berita..."><select class="form-control" style="width:auto" onchange="filterAdminStatus(this.value)"><option value="">Semua status</option><option>Published</option><option>Draft</option><option>Scheduled</option></select></div><table class="admin-table"><thead><tr><th>Artikel</th><th>Kategori</th><th>Penulis</th><th>Status</th><th>Views</th><th>Tanggal</th><th></th></tr></thead><tbody id="admin-article-rows">${data.map(tableRow).join("")}</tbody></table></section>`, type === "all" ? "articles" : type); }
 function tableRow(a) { return `<tr data-title="${esc(a.title).toLowerCase()}" data-status="${a.status}"><td><div style="display:flex;align-items:center;gap:10px"><img class="table-thumb" src="${a.image || IMAGE.city}" alt=""><strong>${esc(a.title)}</strong></div></td><td>${esc(a.category)}</td><td>${esc(a.author)}</td><td><span class="status ${a.status.toLowerCase()}">${a.status}</span></td><td>${esc(a.views)}</td><td>${esc(a.date)}</td><td><a class="table-action" href="#/admin/edit/${a.id}">Edit</a><button class="table-action" onclick="deleteArticle(${a.id})">Hapus</button></td></tr>`; }
@@ -768,7 +805,16 @@ function adminMedia() { const media = mediaList(); return adminChrome(`<header c
 <section class="admin-panel" style="margin-top:18px"><h2 class="panel-title">Gambar tersimpan (${media.length})</h2><div class="media-grid">${media.map(u => `<figure class="media-figure"><img src="${u}" alt="" loading="lazy" onerror="this.parentElement.style.display='none'"><figcaption><button class="table-action" onclick="copyMediaUrl('${encodeURIComponent(u)}')">Salin URL</button></figcaption></figure>`).join("")}</div></section>`, "media"); }
 
 
-function adminAnalytics() { const all = articles(); const byCat = {}; all.forEach(a => byCat[a.category] = (byCat[a.category] || 0) + 1); const cats = Object.entries(byCat).sort((a, b) => b[1] - a[1]); const max = Math.max(1, ...cats.map(c => c[1])); const totalViews = all.reduce((s, a) => s + (parseInt(String(a.views).replace(/[^\d]/g, "")) || 0), 0); return adminChrome(`<header class="admin-header"><div><h1>Traffic & Analytics</h1><p>Pantau pembaca dan performa konten Kodya.id.</p></div></header><div class="admin-cards"><div class="admin-card"><span>Total Artikel</span><strong>${all.length}</strong></div><div class="admin-card"><span>Published</span><strong>${all.filter(a => a.status === "Published").length}</strong></div><div class="admin-card"><span>Total Views</span><strong>${totalViews.toLocaleString("id-ID")}</strong></div><div class="admin-card"><span>Kategori</span><strong>${cats.length}</strong></div></div><section class="admin-panel" style="margin-top:18px"><h2 class="panel-title">Artikel per Kategori</h2><div class="bar-list">${cats.map(c => `<div class="bar-row"><span>${esc(c[0])}</span><div class="bar-track"><div class="bar-fill" style="width:${Math.max(8, Math.round(c[1] / max * 100))}%"></div></div><strong>${c[1]}</strong></div>`).join("")}</div></section>`, "analytics"); }
+function adminAnalytics() {
+  const all = articles();
+  const byCat = {}; all.forEach(a => byCat[a.category] = (byCat[a.category] || 0) + 1);
+  const cats = Object.entries(byCat).sort((a, b) => b[1] - a[1]);
+  const max = Math.max(1, ...cats.map(c => c[1]));
+  const totalViews = (__stats && __stats.total) || 0;
+  const daily = viewsChart((__stats && __stats.daily) || {});
+  const dailyMax = Math.max(1, ...daily.points.map(p => p.v));
+  return adminChrome(`<header class="admin-header"><div><h1>Traffic & Analytics</h1><p>Pantau pembaca dan performa konten Kodya.id (data real).</p></div></header><div class="admin-cards"><div class="admin-card"><span>Total Artikel</span><strong>${all.length}</strong></div><div class="admin-card"><span>Published</span><strong>${all.filter(a => a.status === "Published").length}</strong></div><div class="admin-card"><span>Total Views</span><strong>${totalViews.toLocaleString("id-ID")}</strong></div><div class="admin-card"><span>Views Hari Ini</span><strong>${(daily.points[daily.points.length - 1].v || 0).toLocaleString("id-ID")}</strong></div></div><section class="admin-panel" style="margin-top:18px"><h2 class="panel-title">Views 7 Hari Terakhir</h2><div class="bar-list">${daily.points.map(d => `<div class="bar-row"><span>${d.label}</span><div class="bar-track"><div class="bar-fill" style="width:${Math.max(4, Math.round(d.v / dailyMax * 100))}%"></div></div><strong>${d.v.toLocaleString("id-ID")}</strong></div>`).join("")}</div></section><section class="admin-panel" style="margin-top:18px"><h2 class="panel-title">Artikel per Kategori</h2><div class="bar-list">${cats.map(c => `<div class="bar-row"><span>${esc(c[0])}</span><div class="bar-track"><div class="bar-fill" style="width:${Math.max(8, Math.round(c[1] / max * 100))}%"></div></div><strong>${c[1]}</strong></div>`).join("")}</div></section>`, "analytics");
+}
 
 async function route() {
   disposeTradingView();
@@ -779,7 +825,7 @@ async function route() {
     if (parts[1] === "login" || !session()) return loginPage();
     // Akun publik (Pembaca) tidak punya akses dashboard — arahkan ke beranda.
     if (session().role === "Pembaca") { location.hash = "#/"; return; }
-    await Promise.all([ensureArticles(), ensureUsers(), ensureForum(), ensureMedia(), ensureCategories()]);
+    await Promise.all([ensureArticles(), ensureUsers(), ensureForum(), ensureMedia(), ensureCategories(), ensureStats()]);
     if (!parts[1]) app.innerHTML = dashboard();
     else if (["articles", "drafts", "scheduled"].includes(parts[1])) app.innerHTML = adminArticles(parts[1] === "articles" ? "all" : parts[1]);
     else if (parts[1] === "new") app.innerHTML = articleEditor();
@@ -821,6 +867,7 @@ async function route() {
     loadMarketQuotes().then(applyMarketQuotes);
     window.__marketTimer = setInterval(() => loadMarketQuotes(true).then(applyMarketQuotes), 5 * 60 * 1000);
   }
+  trackView(parts);
   window.scrollTo(0, 0);
 }
 
