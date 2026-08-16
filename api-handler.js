@@ -189,9 +189,14 @@ async function handleApi({ method, path, query = new URLSearchParams(), headers 
       const articles = await storage.getJSON("articles", []);
       const stats = await storage.getJSON("stats", {});
       const viewsMap = (stats && stats.articles) || {};
+      const users = await storage.getJSON("users", []);
       const me = currentUser();
       const list = (me ? articles : (Array.isArray(articles) ? articles.filter(a => a && a.status === "Published") : []))
-        .map(a => ({ ...a, views: viewsMap[a.id] || 0 }));
+        .map(a => {
+          // Profil penulis selalu mengikuti profil akun TERBARU (nama & foto), bukan salinan lama.
+          const u = users.find(x => x.email && String(x.email).toLowerCase() === String(a.authorEmail || "").toLowerCase());
+          return { ...a, views: viewsMap[a.id] || 0, author: u ? u.name : a.author, avatar: u ? (u.avatar || "") : (a.avatar || "") };
+        });
       return json(200, { ok: true, articles: list });
     }
 
@@ -244,7 +249,15 @@ async function handleApi({ method, path, query = new URLSearchParams(), headers 
     // Forum diskusi memakai endpoint & key penyimpanan "forum" (kompatibel data lama);
     // opini publik memakai store & endpoint terpisah ("opinions").
     if (path === "/api/forum" && method === "GET") {
-      return json(200, { ok: true, threads: await storage.getJSON("forum", []) });
+      const threads = await storage.getJSON("forum", []);
+      const users = await storage.getJSON("users", []);
+      const pf = email => users.find(x => x.email && String(x.email).toLowerCase() === String(email || "").toLowerCase());
+      const list = (Array.isArray(threads) ? threads : []).map(t => {
+        const u = pf(t.email);
+        const comments = (t.comments || []).map(c => { const cu = pf(c.email); return cu ? { ...c, author: cu.name, avatar: cu.avatar || "" } : c; });
+        return { ...t, author: u ? u.name : t.author, avatar: u ? (u.avatar || "") : (t.avatar || ""), comments };
+      });
+      return json(200, { ok: true, threads: list });
     }
     if (path === "/api/forum" && method === "POST") {
       const me = currentUser();
@@ -253,7 +266,13 @@ async function handleApi({ method, path, query = new URLSearchParams(), headers 
       return json(200, { ok: true });
     }
     if (path === "/api/opinions" && method === "GET") {
-      return json(200, { ok: true, opinions: await storage.getJSON("opinions", []) });
+      const opinions = await storage.getJSON("opinions", []);
+      const users = await storage.getJSON("users", []);
+      const list = (Array.isArray(opinions) ? opinions : []).map(t => {
+        const u = users.find(x => x.email && String(x.email).toLowerCase() === String(t.email || "").toLowerCase());
+        return u ? { ...t, author: u.name, avatar: u.avatar || "" } : t;
+      });
+      return json(200, { ok: true, opinions: list });
     }
     if (path === "/api/opinions" && method === "POST") {
       const me = currentUser();
