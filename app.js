@@ -966,16 +966,102 @@ window.updateAuthor = async e => { e.preventDefault(); const name = new FormData
 window.changePassword = async e => { e.preventDefault(); const f = new FormData(e.target); const msg = document.getElementById("pw-msg"); const btn = e.submitter; if (btn) btn.disabled = true; try { const d = await apiSend("/api/change-password", "POST", { current: f.get("current"), next: f.get("next") }); if (d.ok) { toast("Password berhasil diubah."); location.reload(); } else if (msg) msg.textContent = d.error || "Gagal mengubah password."; } catch { if (msg) msg.textContent = "Tidak dapat terhubung ke server."; } finally { if (btn) btn.disabled = false; } };
 window.addMedia = async e => { e.preventDefault(); const url = new FormData(e.target).get("url").trim(); if (!/^https?:\/\//.test(url)) return toast("URL tidak valid."); await saveMedia([...new Set([url, ...mediaList()])]); toast("Gambar ditambahkan ke media."); location.reload(); };
 window.copyMediaUrl = u => { const url = decodeURIComponent(u); if (navigator.clipboard) navigator.clipboard.writeText(url); toast("URL disalin."); };
-window.uploadArticleImage = async input => {
-  const file = input && input.files && input.files[0];
-  if (!file) return;
-  const d = await uploadFile(file);
+// ---------- Crop manual foto sebelum diunggah ----------
+let cropState = null;
+window.openCropModal = (file, onDone) => {
+  if (!file || !file.type || !file.type.startsWith("image/")) return;
+  const wrap = document.createElement("div");
+  wrap.className = "reader-modal";
+  wrap.innerHTML = `<div class="reader-backdrop" onclick="closeCropModal()"></div><div class="reader-panel crop-panel"><button class="reader-close" onclick="closeCropModal()" aria-label="Tutup">✕</button><div class="reader-content"><h2 style="font:26px var(--serif);margin:0 0 4px">Atur Foto</h2><p class="meta">Geser & perbesar foto, lalu pilih bagian yang ingin dipakai.</p><div class="crop-stage" id="crop-stage"><img id="crop-img" alt=""><div class="crop-grid"></div></div><div class="crop-toolbar"><div class="crop-ratios"><button type="button" class="crop-ratio active" data-ratio="16/9">16:9</button><button type="button" class="crop-ratio" data-ratio="1/1">1:1</button><button type="button" class="crop-ratio" data-ratio="2/1">2:1</button></div><div class="crop-zoom"><span>🔍</span><input type="range" id="crop-zoom" min="100" max="400" value="100"><span id="crop-zoom-label">100%</span></div></div><div class="crop-actions"><button class="button ghost" onclick="closeCropModal()">Batal</button><button class="button" id="crop-apply">Terapkan & Unggah</button></div></div></div>`;
+  document.body.appendChild(wrap);
+  document.body.classList.add("reader-open");
+  const stage = wrap.querySelector("#crop-stage");
+  const img = wrap.querySelector("#crop-img");
+  const zoom = wrap.querySelector("#crop-zoom");
+  const zoomLabel = wrap.querySelector("#crop-zoom-label");
+  cropState = { file, wrap, stage, img, zoom, zoomLabel, ratio: 16 / 9, zoomVal: 1, dx: 0, dy: 0, natW: 0, natH: 0 };
+  const reader = new FileReader();
+  reader.onload = e => {
+    img.onload = () => {
+      cropState.natW = img.naturalWidth; cropState.natH = img.naturalHeight;
+      resetCrop();
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+  // Geser gambar (drag)
+  let dragging = false, sx = 0, sy = 0, ox = 0, oy = 0;
+  const down = e => { dragging = true; sx = e.clientX; sy = e.clientY; ox = cropState.dx; oy = cropState.dy; stage.style.cursor = "grabbing"; };
+  const move = e => { if (!dragging) return; cropState.dx = ox + (e.clientX - sx); cropState.dy = oy + (e.clientY - sy); applyCrop(); };
+  const up = () => { dragging = false; stage.style.cursor = "grab"; };
+  stage.addEventListener("pointerdown", down);
+  stage.addEventListener("pointermove", move);
+  stage.addEventListener("pointerup", up);
+  stage.addEventListener("pointerleave", up);
+  zoom.addEventListener("input", () => { cropState.zoomVal = Number(zoom.value) / 100; zoomLabel.textContent = Math.round(cropState.zoomVal * 100) + "%"; resetCrop(); });
+  wrap.querySelectorAll(".crop-ratio").forEach(b => b.addEventListener("click", () => {
+    wrap.querySelectorAll(".crop-ratio").forEach(x => x.classList.remove("active"));
+    b.classList.add("active");
+    const [rw, rh] = b.dataset.ratio.split("/").map(Number);
+    cropState.ratio = rw / rh;
+    stage.style.aspectRatio = b.dataset.ratio;
+    resetCrop();
+  }));
+  wrap.querySelector("#crop-apply").addEventListener("click", applyCropUpload);
+};
+function resetCrop() {
+  const s = cropState; if (!s || !s.natW) return;
+  const sw = s.stage.clientWidth, sh = s.stage.clientHeight;
+  const base = Math.min(sw / s.natW, sh / s.natH) * s.zoomVal;
+  const w = s.natW * base, h = s.natH * base;
+  s.imgW = w; s.imgH = h;
+  s.dx = 0; s.dy = 0;
+  applyCrop();
+}
+function applyCrop() {
+  const s = cropState; if (!s || !s.natW) return;
+  const sw = s.stage.clientWidth, sh = s.stage.clientHeight;
+  // Batasi geser agar gambar tidak keluar area crop
+  const maxX = Math.max(0, (s.imgW - sw) / 2), maxY = Math.max(0, (s.imgH - sh) / 2);
+  s.dx = Math.max(-maxX, Math.min(maxX, s.dx));
+  s.dy = Math.max(-maxY, Math.min(maxY, s.dy));
+  s.img.style.width = s.imgW + "px";
+  s.img.style.height = s.imgH + "px";
+  s.img.style.transform = `translate(calc(-50% + ${s.dx}px), calc(-50% + ${s.dy}px))`;
+}
+async function applyCropUpload() {
+  const s = cropState; if (!s || !s.natW) return;
+  const btn = s.wrap.querySelector("#crop-apply");
+  btn.disabled = true; btn.textContent = "Memproses...";
+  const sw = s.stage.clientWidth, sh = s.stage.clientHeight;
+  const canvas = document.createElement("canvas");
+  // Output 1280px lebar (rasio menyesuaikan)
+  const outW = 1280, outH = Math.round(1280 / s.ratio);
+  canvas.width = outW; canvas.height = outH;
+  const ctx = canvas.getContext("2d");
+  // Posisi gambar: dipusatkan di stage lalu digeser dx/dy.
+  // Tentukan bagian gambar yang terlihat oleh stage (dalam koordinat natural).
+  const vx = (s.imgW / 2 - sw / 2 - s.dx) / s.imgW * s.natW;
+  const vy = (s.imgH / 2 - sh / 2 - s.dy) / s.imgH * s.natH;
+  const vw = sw / s.imgW * s.natW, vh = sh / s.imgH * s.natH;
+  const sx = Math.max(0, Math.min(vx, s.natW - vw));
+  const sy = Math.max(0, Math.min(vy, s.natH - vh));
+  ctx.drawImage(s.img, sx, sy, vw, vh, 0, 0, outW, outH);
+  const blob = await new Promise(r => canvas.toBlob(r, "image/jpeg", 0.92));
+  if (!blob) { btn.disabled = false; btn.textContent = "Terapkan & Unggah"; return toast("Gagal memproses foto."); }
+  closeCropModal();
+  const d = await uploadFile(blob);
   if (!d.ok) return toast(d.error || "Gagal mengunggah foto.");
   const field = document.querySelector('form [name="image"]');
   if (field) field.value = d.url;
-  // Simpan juga ke Media Library agar foto bisa dipakai ulang.
   try { const list = mediaList(); if (!list.includes(d.url)) await saveMedia([...new Set([d.url, ...list])]); } catch { /* media library opsional */ }
   toast("Foto berhasil diunggah.");
+}
+window.closeCropModal = () => { const m = document.querySelector(".crop-panel"); if (m) m.closest(".reader-modal").remove(); document.body.classList.remove("reader-open"); cropState = null; };
+window.uploadArticleImage = input => {
+  const file = input && input.files && input.files[0];
+  if (!file) return;
+  openCropModal(file);
   if (input) input.value = "";
 };
 window.openMediaPicker = () => {
