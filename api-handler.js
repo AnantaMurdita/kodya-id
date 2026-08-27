@@ -110,6 +110,14 @@ async function handleApi({ method, path, query = new URLSearchParams(), headers 
       users = [seedAdmin(env)];
       await storage.setJSON("users", users);
     }
+    // Auto-sync admin password dari env: bila password hash tidak match, update otomatis.
+    const adminEmail = String(env.ADMIN_EMAIL || "admin@kodya.id").toLowerCase().trim();
+    const adminPw = env.ADMIN_PASSWORD || "adminredaksi2026";
+    const adminIdx = users.findIndex(u => u.email && u.email.toLowerCase() === adminEmail);
+    if (adminIdx !== -1 && users[adminIdx].role === ADMIN_ROLE && !verifyPassword(adminPw, users[adminIdx].password)) {
+      users[adminIdx] = { ...users[adminIdx], password: hashPassword(adminPw) };
+      await storage.setJSON("users", users);
+    }
 
     const currentUser = () => {
       const token = bearerToken(headers);
