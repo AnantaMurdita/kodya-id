@@ -501,11 +501,11 @@ function home() {
     <main class="page homepage">
       <div class="shell">
         <div class="section-label"><span>BERITA TERBARU</span></div>
+        <div class="hero-feature" id="hero-feature">
+          <div class="hero-track" id="hero-track">${slides.map((a, i) => heroSlide(a, i)).join("")}</div>
+          <div class="hero-controls" aria-label="Navigasi slide"><button class="hero-arrow" onclick="heroPrev()" aria-label="Slide sebelumnya">←</button><span class="hero-count" id="hero-count" aria-live="polite">01 / ${String(slides.length).padStart(2, "0")}</span><button class="hero-arrow" onclick="heroNext()" aria-label="Slide berikutnya">→</button></div>
+        </div>
         <div class="hero">
-          <div class="hero-feature" id="hero-feature">
-            <div class="hero-track" id="hero-track">${slides.map((a, i) => heroSlide(a, i)).join("")}</div>
-            <div class="hero-controls" aria-label="Navigasi slide"><button class="hero-arrow" onclick="heroPrev()" aria-label="Slide sebelumnya">←</button><span class="hero-count" id="hero-count" aria-live="polite">01 / ${String(slides.length).padStart(2, "0")}</span><button class="hero-arrow" onclick="heroNext()" aria-label="Slide berikutnya">→</button></div>
-          </div>
           ${marketCard()}
         </div>
         <div class="under-hero"><div class="mini-grid">${supporting.map(a => `<article class="mini-card"><a href="#/artikel/${a.id}" class="mini-image"><img src="${a.image || IMAGE.city}" alt="" loading="lazy"></a><span class="tag">${esc(a.category)}</span><a href="#/artikel/${a.id}"><h3>${esc(a.title)}</h3></a><p>${esc(a.date)} · ${esc(a.author)}</p></article>`).join("")}</div><section class="trending"><h2>TRENDING</h2>${trends.map((a,i) => `<a href="#/artikel/${a.id}" class="trend-item"><span class="trend-no">0${i+1}</span><span><span class="trend-title">${esc(a.title)}</span><span class="trend-meta">${esc(a.date)}</span></span></a>`).join("")}</section></div>
