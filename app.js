@@ -1204,6 +1204,9 @@ async function applyCropUpload() {
   if (!d.ok) return toast(d.error || "Gagal mengunggah foto.");
   const field = document.querySelector('form [name="image"]');
   if (field) field.value = d.url;
+  // Update preview gambar di editor (hero image)
+  const heroImg = document.getElementById("news-hero-img");
+  if (heroImg) heroImg.src = d.url;
   try { const list = mediaList(); if (!list.includes(d.url)) await saveMedia([...new Set([d.url, ...list])]); } catch { /* media library opsional */ }
   toast("Foto berhasil diunggah.");
 }
@@ -1224,10 +1227,13 @@ window.openMediaPicker = () => {
 };
 window.closeMediaPicker = () => { const m = document.querySelector(".reader-modal"); if (m) m.remove(); document.body.classList.remove("reader-open"); };
 window.pickMedia = u => {
+  const url = decodeURIComponent(u);
   const input = document.querySelector('form [name="image"]');
-  if (input) input.value = decodeURIComponent(u);
+  if (input) input.value = url;
+  const heroImg = document.getElementById("news-hero-img");
+  if (heroImg) heroImg.src = url;
   closeMediaPicker();
-  toast("Foto dipilih. Simpan artikel untuk menerapkan.");
+  toast("Foto dipilih.");
 };
 window.uploadMedia = async () => { const input = document.getElementById("media-file"); const file = input && input.files && input.files[0]; const msg = document.getElementById("upload-msg"); const btn = document.getElementById("upload-btn"); if (msg) msg.textContent = ""; if (!file) { if (msg) msg.textContent = "Pilih file gambar terlebih dahulu."; return; } if (btn) { btn.disabled = true; btn.textContent = "Mengunggah..."; } try { const d = await uploadFile(file); if (d.ok) { await saveMedia([...new Set([d.url, ...mediaList()])]); toast("Gambar berhasil diunggah."); location.reload(); } else if (msg) msg.textContent = d.error || "Gagal mengunggah gambar."; } catch { if (msg) msg.textContent = "Tidak dapat terhubung ke server."; } finally { if (btn) { btn.disabled = false; btn.textContent = "↑ Unggah Gambar"; } } };
 window.switchMarket = x => { activeMarket=x; route(); };
