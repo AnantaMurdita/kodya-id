@@ -487,7 +487,7 @@ function storyCard(a) { return `<article class="story-card"><a href="#/artikel/$
 function home() {
   const items = published();
   if (!items.length) {
-    return publicChrome(`<main class="page homepage"><div class="shell"><div class="section-label"><span>EDISI PAGI</span></div><div class="empty" style="padding:64px 0">Belum ada berita yang dipublikasikan.</div></div></main>`);
+    return publicChrome(`<main class="page homepage"><div class="shell"><div class="section-label"><span>BERITA TERBARU</span></div><div class="empty" style="padding:64px 0">Belum ada berita yang dipublikasikan.</div></div></main>`);
   }
   const lead = items.find(a => a.featured) || items[0];
   const slides = [lead, ...items.filter(a => a.id !== lead.id).slice(0, 4)];
@@ -500,7 +500,7 @@ function home() {
   return publicChrome(`
     <main class="page homepage">
       <div class="shell">
-        <div class="section-label"><span>EDISI PAGI</span></div>
+        <div class="section-label"><span>BERITA TERBARU</span></div>
         <div class="hero">
           <article class="hero-feature" id="hero-feature">
             <div class="hero-track" id="hero-track">${slides.map((a, i) => heroSlide(a, i)).join("")}</div>
