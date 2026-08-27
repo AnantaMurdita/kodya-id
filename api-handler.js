@@ -2,6 +2,12 @@
 const { hashPassword, verifyPassword, signToken, verifyToken, secret } = require("./auth");
 
 const ADMIN_ROLE = "Super Admin";
+const AUTHOR_ROLE = "Penulis";
+const READER_ROLE = "Pembaca";
+const STAFF_ROLES = new Set([ADMIN_ROLE, AUTHOR_ROLE]); // Super Admin & Penulis tidak dihitung sebagai views
+const STATS_PUBLIC_ONLY = 3; // views hanya dari pengunjung publik / Pembaca
+const SESSION_COOKIE = "kodya_sid";
+const SESSION_MAX_AGE = 12 * 60 * 60;
 const MAX_UPLOAD = 25 * 1024 * 1024; // 25 MB (gambar, audio MP3, video MP4)
 const ALLOWED_MEDIA = { "image/jpeg": ".jpg", "image/png": ".png", "image/gif": ".gif", "image/webp": ".webp", "image/svg+xml": ".svg", "audio/mpeg": ".mp3", "audio/mp3": ".mp3", "video/mp4": ".mp4" };
 
@@ -52,9 +58,26 @@ function nextId(list) {
   return list.reduce((m, x) => Math.max(m, Number(x.id) || 0), 0) + 1;
 }
 
+function cookieValue(headers, name) {
+  const raw = (headers && (headers.cookie || headers.Cookie)) || "";
+  const m = String(raw).match(new RegExp("(?:^|;\\s*)" + name + "=([^;]+)"));
+  return m ? decodeURIComponent(m[1]) : "";
+}
+
 function bearerToken(headers) {
   const h = (headers && (headers.authorization || headers.Authorization)) || "";
-  return h.startsWith("Bearer ") ? h.slice(7).trim() : "";
+  if (h.startsWith("Bearer ")) return h.slice(7).trim();
+  return cookieValue(headers, SESSION_COOKIE);
+}
+
+function isStaffUser(user) {
+  if (!user) return false;
+  const role = String(user.role || "").toLowerCase().replace(/\s+/g, " ").trim();
+  return role !== READER_ROLE.toLowerCase();
+}
+
+function sessionSetCookie(token) {
+  return `${SESSION_COOKIE}=${encodeURIComponent(token)}; Path=/; Max-Age=${SESSION_MAX_AGE}; SameSite=Lax`;
 }
 
 function seedAdmin(env) {
@@ -95,6 +118,20 @@ async function handleApi({ method, path, query = new URLSearchParams(), headers 
       return users.find(u => u.email.toLowerCase() === String(data.email).toLowerCase()) || null;
     };
 
+    // Super Admin & Penulis tidak dihitung. Angka lama (versi < 2) direset ke 0.
+    const loadPublicStats = async () => {
+      const stats = await storage.getJSON("stats", {});
+      if (Number(stats.version) === STATS_PUBLIC_ONLY) {
+        stats.daily = stats.daily || {};
+        stats.articles = stats.articles || {};
+        stats.total = Number(stats.total) || 0;
+        return stats;
+      }
+      const reset = { version: STATS_PUBLIC_ONLY, total: 0, daily: {}, articles: {} };
+      await storage.setJSON("stats", reset);
+      return reset;
+    };
+
     // ---------- Auth ----------
     if (path === "/api/me" && method === "GET") {
       const me = currentUser();
@@ -106,7 +143,8 @@ async function handleApi({ method, path, query = new URLSearchParams(), headers 
       const { email, password } = body || {};
       const user = users.find(u => u.email.toLowerCase() === String(email || "").toLowerCase());
       if (!user || !verifyPassword(password, user.password)) return fail(401, "Email atau password salah.");
-      return json(200, { ok: true, token: signToken(user, secret(env)), user: publicUser(user) });
+      const token = signToken(user, secret(env));
+      return json(200, { ok: true, token, user: publicUser(user) }, { "Set-Cookie": sessionSetCookie(token) });
     }
 
     if (method === "POST" && path === "/api/register") {
@@ -187,8 +225,8 @@ async function handleApi({ method, path, query = new URLSearchParams(), headers 
     // ---------- Artikel ----------
     if (path === "/api/articles" && method === "GET") {
       const articles = await storage.getJSON("articles", []);
-      const stats = await storage.getJSON("stats", {});
-      const viewsMap = (stats && stats.articles) || {};
+      const stats = await loadPublicStats();
+      const viewsMap = stats.articles || {};
       const users = await storage.getJSON("users", []);
       const me = currentUser();
       const list = (me ? articles : (Array.isArray(articles) ? articles.filter(a => a && a.status === "Published") : []))
@@ -226,11 +264,11 @@ async function handleApi({ method, path, query = new URLSearchParams(), headers 
 
     // ---------- Statistik pengunjung (real, tersimpan di server) ----------
     if (path === "/api/views" && method === "POST") {
+      const me = currentUser();
+      if (me && STAFF_ROLES.has(me.role)) return json(200, { ok: true, skipped: true });
       const id = Number(body && body.id) || null;
       const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Jakarta" });
-      const stats = await storage.getJSON("stats", {});
-      stats.daily = stats.daily || {};
-      stats.articles = stats.articles || {};
+      const stats = await loadPublicStats();
       stats.total = (Number(stats.total) || 0) + 1;
       stats.daily[today] = (Number(stats.daily[today]) || 0) + 1;
       if (id) stats.articles[id] = (Number(stats.articles[id]) || 0) + 1;
@@ -241,7 +279,7 @@ async function handleApi({ method, path, query = new URLSearchParams(), headers 
       const me = currentUser();
       if (!me) return fail(401, "Sesi tidak valid. Silakan masuk kembali.");
       if (me.role !== ADMIN_ROLE) return fail(403, "Hanya Super Admin yang dapat melihat statistik.");
-      const stats = await storage.getJSON("stats", {});
+      const stats = await loadPublicStats();
       return json(200, { ok: true, stats: { total: Number(stats.total) || 0, daily: stats.daily || {}, articles: stats.articles || {} } });
     }
 
