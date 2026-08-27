@@ -502,10 +502,10 @@ function home() {
       <div class="shell">
         <div class="section-label"><span>BERITA TERBARU</span></div>
         <div class="hero">
-          <article class="hero-feature" id="hero-feature">
+          <div class="hero-feature" id="hero-feature">
             <div class="hero-track" id="hero-track">${slides.map((a, i) => heroSlide(a, i)).join("")}</div>
             <div class="hero-controls" aria-label="Navigasi slide"><button class="hero-arrow" onclick="heroPrev()" aria-label="Slide sebelumnya">←</button><span class="hero-count" id="hero-count" aria-live="polite">01 / ${String(slides.length).padStart(2, "0")}</span><button class="hero-arrow" onclick="heroNext()" aria-label="Slide berikutnya">→</button></div>
-          </article>
+          </div>
           ${marketCard()}
         </div>
         <div class="under-hero"><div class="mini-grid">${supporting.map(a => `<article class="mini-card"><a href="#/artikel/${a.id}" class="mini-image"><img src="${a.image || IMAGE.city}" alt="" loading="lazy"></a><span class="tag">${esc(a.category)}</span><a href="#/artikel/${a.id}"><h3>${esc(a.title)}</h3></a><p>${esc(a.date)} · ${esc(a.author)}</p></article>`).join("")}</div><section class="trending"><h2>TRENDING</h2>${trends.map((a,i) => `<a href="#/artikel/${a.id}" class="trend-item"><span class="trend-no">0${i+1}</span><span><span class="trend-title">${esc(a.title)}</span><span class="trend-meta">${esc(a.date)}</span></span></a>`).join("")}</section></div>
@@ -515,7 +515,7 @@ function home() {
 }
 
 function heroSlide(a, i) {
-  return `<article class="hero-slide" ${i > 0 ? `aria-hidden="true"` : ""}><div class="hero-copy"><span class="tag">HEADLINE · ${esc(a.category)}</span><h1>${esc(a.title)}</h1><p class="hero-summary">${esc(a.excerpt)}</p><div class="byline"><strong>${esc(a.author)}</strong><br>${esc(a.date.split(" · ")[0] || a.date)}</div><a href="#/artikel/${a.id}" class="read-more">Baca Selengkapnya →</a></div><img class="hero-img" src="${a.image || IMAGE.city}" alt="${esc(a.title)}" loading="${i === 0 ? "eager" : "lazy"}"></article>`;
+  return `<div class="hero-slide" ${i > 0 ? `aria-hidden="true"` : ""}><div class="hero-copy"><span class="tag">HEADLINE · ${esc(a.category)}</span><h1>${esc(a.title)}</h1><p class="hero-summary">${esc(a.excerpt)}</p><div class="byline"><strong>${esc(a.author)}</strong><br>${esc(a.date.split(" · ")[0] || a.date)}</div><a href="#/artikel/${a.id}" class="read-more">Baca Selengkapnya →</a></div><img class="hero-img" src="${a.image || IMAGE.city}" alt="${esc(a.title)}" loading="${i === 0 ? "eager" : "lazy"}"></div>`;
 }
 let __heroIndex = 0;
 function heroGo(i) {
