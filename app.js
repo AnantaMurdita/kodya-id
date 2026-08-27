@@ -503,7 +503,6 @@ function home() {
         <div class="section-label"><span>BERITA TERBARU</span></div>
         <div class="hero">
           <div class="hero-feature" id="hero-feature">
-            <img class="hero-img" id="hero-img" src="${slides[0]?.image || IMAGE.city}" alt="">
             <div class="hero-track" id="hero-track">${slides.map((a, i) => heroSlide(a, i)).join("")}</div>
             <div class="hero-controls" aria-label="Navigasi slide"><button class="hero-arrow" onclick="heroPrev()" aria-label="Slide sebelumnya">←</button><span class="hero-count" id="hero-count" aria-live="polite">01 / ${String(slides.length).padStart(2, "0")}</span><button class="hero-arrow" onclick="heroNext()" aria-label="Slide berikutnya">→</button></div>
           </div>
@@ -516,7 +515,7 @@ function home() {
 }
 
 function heroSlide(a, i) {
-  return `<div class="hero-slide" ${i > 0 ? `aria-hidden="true"` : ""} data-img="${a.image || IMAGE.city}"><div class="hero-copy"><span class="tag">HEADLINE · ${esc(a.category)}</span><h1>${esc(a.title)}</h1><p class="hero-summary">${esc(a.excerpt)}</p><div class="byline"><strong>${esc(a.author)}</strong><br>${esc(a.date.split(" · ")[0] || a.date)}</div><a href="#/artikel/${a.id}" class="read-more">Baca Selengkapnya →</a></div></div>`;
+  return `<div class="hero-slide" ${i > 0 ? `aria-hidden="true"` : ""}><div class="hero-copy"><span class="tag">HEADLINE · ${esc(a.category)}</span><h1>${esc(a.title)}</h1><p class="hero-summary">${esc(a.excerpt)}</p><div class="byline"><strong>${esc(a.author)}</strong><br>${esc(a.date.split(" · ")[0] || a.date)}</div><a href="#/artikel/${a.id}" class="read-more">Baca Selengkapnya →</a></div><img class="hero-img" src="${a.image || IMAGE.city}" alt="${esc(a.title)}" loading="${i === 0 ? "eager" : "lazy"}"></div>`;
 }
 let __heroIndex = 0;
 function heroGo(i) {
@@ -529,10 +528,6 @@ function heroGo(i) {
     if (k === __heroIndex) s.removeAttribute("aria-hidden");
     else s.setAttribute("aria-hidden", "true");
   });
-  // Update hero image
-  const heroImg = document.getElementById("hero-img");
-  const activeSlide = track.children[__heroIndex];
-  if (heroImg && activeSlide) heroImg.src = activeSlide.dataset.img || "";
   const count = document.getElementById("hero-count");
   if (count) count.textContent = `${String(__heroIndex + 1).padStart(2, "0")} / ${String(n).padStart(2, "0")}`;
 }
