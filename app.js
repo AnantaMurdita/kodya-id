@@ -112,6 +112,8 @@ function applyMarketQuotes() {
   if (ticker) ticker.innerHTML = tickerItems();
   const rows = document.getElementById("market-rows");
   if (rows) rows.innerHTML = marketRows(activeMarket);
+  const homeRow = document.getElementById("home-market-row");
+  if (homeRow) homeRow.innerHTML = homeMarketItems();
   const panel = document.getElementById("ai-panel");
   if (panel && panel.classList.contains("open")) generateAiAnalysis();
 }
@@ -252,6 +254,97 @@ const FUNDAMENTALS = {
       ["Likuiditas global membaik mendukung aset kripto", 1],
       ["Persaingan ketat dari layer-1 lain (Solana, dll.)", -1]
     ]
+  },
+  "IDX:JCLQ45": {
+    label: "LQ45",
+    name: "Indeks LQ45 (45 saham likuid BEI)",
+    note: "",
+    factors: [
+      ["Konsentrasi likuiditas di saham-saham blue chip unggulan", 1],
+      ["Kinerja emiten LQ45 cenderung lebih stabil dari indeks luas", 1],
+      ["Aliran masuk dana asing lebih terfokus ke saham LQ45", 1],
+      ["Valuasi PER indeks masih di bawah rata-rata historis", 1],
+      ["Sektoral: dominasi bank & consumer cyclicals", 0],
+      ["Risiko perlambatan konsumsi domestik", -1]
+    ]
+  },
+  "DJIA": {
+    label: "Dow Jones",
+    name: "Dow Jones Industrial Average",
+    note: "",
+    factors: [
+      ["Korporasi AS laporkan laba lebih baik dari ekspektasi", 1],
+      ["The Fed mulai siklus pemangkasan suku bunga", 1],
+      ["Belanja konsumen AS tetap tangguh", 1],
+      ["Sektor teknologi & kesehatan menjadi motor utama", 1],
+      ["Ketidakpastian geopolitik & tensi dagang global", -1],
+      ["Utang korporasi AS masih di level tinggi", -1]
+    ]
+  },
+  "SP:SPX": {
+    label: "S&P 500",
+    name: "Standard & Poor's 500 Index",
+    note: "",
+    factors: [
+      ["Ekspansi earnings quarter berlanjut di atas ekspektasi", 1],
+      ["Sentimen konsumen & bisnis membaik pasca-pemangkasan suku bunga", 1],
+      ["Sektor AI & teknologi mendorong pertumbuhan valuasi", 1],
+      ["Likuiditas global membaik — risk appetite naik", 1],
+      ["Risiko koreksi teknikal di level valuasi tinggi", -1],
+      ["Potensi perlambatan pertumbuhan ekonomi global", -1]
+    ]
+  },
+  "NASDAQ:IXIC": {
+    label: "Nasdaq",
+    name: "Nasdaq Composite Index",
+    note: "",
+    factors: [
+      ["Dominasi sektor teknologi & AI mendorong reli indeks", 1],
+      ["Capex AI oleh Big Tech menciptakan siklus investasi baru", 1],
+      ["Earnings growth teknologi di atas rata-rata pasar", 1],
+      ["Pemangkasan suku bunga mendukung pertumbuhan valuasi", 1],
+      ["Konsentrasi di beberapa mega-cap meningkatkan volatilitas", -1],
+      ["Regulasi antitrust berpotensi membatasi ekspansi teknologi", -1]
+    ]
+  },
+  "NYMEX:BZ": {
+    label: "Brent Oil",
+    name: "Minyak Mentah Brent (BZ=F)",
+    note: "",
+    factors: [
+      ["OPEC+ pertahankan batas produksi untuk menopang harga", 1],
+      ["Pemulihan permintaan energi di China pasca-stimulus", 1],
+      ["Risiko supply disruption dari konflik geopolitik Timur Tengah", 1],
+      ["Pertumbuhan ekonomi global masih didukung permintaan energi", 1],
+      ["Peningkatan produksi minyak serpihan AS menekan harga", -1],
+      ["Transisi energi jangka panjang mengurangi permintaan fossil fuel", -1]
+    ]
+  },
+  "BINANCE:SOLUSDT": {
+    label: "Solana",
+    name: "Solana (SOL/USDT)",
+    note: "",
+    factors: [
+      ["Throughput jaringan tinggi mendukung adopsi DeFi & NFT", 1],
+      ["Ekosistem developer aktif dengan proyek baru terus bermunculan", 1],
+      ["Biaya transaksi rendah menarik pengguna ritel", 1],
+      ["Staking yield menarik bagi investor jangka panjang", 1],
+      ["Risiko gangguan jaringan (downtime historis)", -1],
+      ["Persaingan ketat dengan Ethereum dan layer-1 lain", -1]
+    ]
+  },
+  "BINANCE:BNBUSDT": {
+    label: "BNB",
+    name: "Binance Coin (BNB/USDT)",
+    note: "",
+    factors: [
+      ["Utilitas luas di ekosistem Binance (fee diskon, Launchpad)", 1],
+      ["Mekanisme burn quarterly mengurangi suplai beredar", 1],
+      ["Binance Chain mendukung pertumbuhan DeFi & GameFi", 1],
+      ["Volume perdagangan Binance tetap tertinggi di global", 1],
+      ["Risiko regulasi terhadap Binance di beberapa yurisdiksi", -1],
+      ["Ketergantungan nilai BNB pada kesehatan ekosistem Binance", -1]
+    ]
   }
 };
 function tvAiAnalysisHtml(symbol) {
@@ -306,10 +399,17 @@ window.regenerateTvAiAnalysis = () => { generateTvAiAnalysis(); };
 // ---------- Grafik TradingView real-time ----------
 const TV_SYMBOLS = [
   { label: "IHSG", symbol: "IDX:COMPOSITE", market: "idx", interval: "60" },
+  { label: "LQ45", symbol: "IDX:JCLQ45", market: "idx", interval: "60" },
   { label: "USD/IDR", symbol: "FX_IDC:USDIDR", market: "fx", interval: "240" },
+  { label: "Dow Jones", symbol: "DJIA", market: "global", interval: "60" },
+  { label: "S&P 500", symbol: "SP:SPX", market: "global", interval: "60" },
+  { label: "Nasdaq", symbol: "NASDAQ:IXIC", market: "global", interval: "60" },
   { label: "Emas", symbol: "OANDA:XAUUSD", market: "fx", interval: "60" },
+  { label: "Brent Oil", symbol: "NYMEX:BZ", market: "fx", interval: "60" },
   { label: "Bitcoin", symbol: "BINANCE:BTCUSDT", market: "crypto", interval: "60" },
-  { label: "Ethereum", symbol: "BINANCE:ETHUSDT", market: "crypto", interval: "60" }
+  { label: "Ethereum", symbol: "BINANCE:ETHUSDT", market: "crypto", interval: "60" },
+  { label: "Solana", symbol: "BINANCE:SOLUSDT", market: "crypto", interval: "60" },
+  { label: "BNB", symbol: "BINANCE:BNBUSDT", market: "crypto", interval: "60" }
 ];
 let activeSymbol = "IDX:COMPOSITE";
 let tvScriptPromise = null;
@@ -335,6 +435,21 @@ const TV_MARKETS = {
     nextOpen(day, minutes) {
       return day === 1 && minutes < 5 * 60 ? "hari ini pukul 05.00 WIB" : "Senin, pukul 05.00 WIB";
     }
+  },
+  global: {
+    name: "Pasar Saham Global",
+    session: "Senin–Jumat · jam perdagangan bervariasi per bursa",
+    closedCopy: "Pasar saham global sedang di luar jam perdagangan.",
+    nextOpen(day, minutes) {
+      if (day === 0 || day === 6) return "Senin";
+      return "Berikutnya sesi perdagangan berikutnya";
+    }
+  },
+  crypto: {
+    name: "Pasar Kripto",
+    session: "24/7 · tidak ada jam tutup",
+    closedCopy: "Pasar kripto beroperasi 24/7.",
+    nextOpen() { return "selalu aktif"; }
   }
 };
 function wibParts() {
@@ -352,9 +467,18 @@ function marketStatus(tvSymbol) {
   const cfg = TV_MARKETS[meta.market];
   if (!cfg) return { open: true };
   const { day, minutes } = wibParts();
-  const open = meta.market === "idx"
-    ? day >= 1 && day <= 5 && minutes >= 9 * 60 && minutes < 15 * 60 + 30
-    : !(day === 0 || (day === 6 && minutes >= 4 * 60) || (day === 1 && minutes < 5 * 60));
+  let open;
+  if (meta.market === "idx") {
+    open = day >= 1 && day <= 5 && minutes >= 9 * 60 && minutes < 15 * 60 + 30;
+  } else if (meta.market === "crypto") {
+    open = true; // 24/7
+  } else if (meta.market === "global") {
+    // US market: Senin-Jumat, sekitar 21.30–04.00 WIB (WSIB)
+    open = day >= 1 && day <= 5;
+  } else {
+    // fx: Senin-Jumat
+    open = !(day === 0 || (day === 6 && minutes >= 4 * 60) || (day === 1 && minutes < 5 * 60));
+  }
   return { open, cfg, day, minutes };
 }
 function closedChartHtml(cfg, nextOpen) {
@@ -481,6 +605,25 @@ function publicChrome(content, route = "") {
 function footer() { return `<footer class="footer"><div class="shell"><div class="footer-grid"><div><div class="brand-block"><a href="#/" class="brand">kodya<em>.id</em></a><span class="brand-tagline">Information Beyond Limits</span></div><div class="social-links"><a href="https://www.instagram.com/kodya.id?igsh=ZXA3YTU1YzM2Zmph&amp;utm_source=qr" target="_blank" rel="noopener" aria-label="Instagram @kodya.id" title="Instagram @kodya.id"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg></a><a href="https://www.tiktok.com/@kodyamedia?_r=1&amp;_t=ZS-98veeAfg4CT" target="_blank" rel="noopener" aria-label="TikTok @kodyamedia" title="TikTok @kodyamedia"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"></path></svg></a></div></div><div><h4>Navigasi</h4><ul><li><a href="#/kategori/politik">Politik</a></li><li><a href="#/kategori/ekonomi">Ekonomi</a></li><li><a href="#/kategori/bisnis">Bisnis</a></li><li><a href="#/kategori/teknologi">Teknologi</a></li><li><a href="#/kategori/kripto">Kripto</a></li></ul></div><div><h4>Informasi</h4><ul><li>Tentang Kami</li><li>Redaksi</li><li>Kontak</li><li>Pedoman Media Siber</li><li>Kebijakan Privasi</li></ul></div><div><h4>Newsletter</h4><p>Dapatkan ringkasan berita penting setiap hari.</p><form class="newsletter" onsubmit="newsletter(event)"><input required type="email" placeholder="Email Anda"/><button>→</button></form></div></div><div class="copyright">© 2026 Kodya.id. Semua hak dilindungi.</div></div></footer>`; }
 
 function marketCard() { return `<aside class="market-card"><div class="market-heading"><span>PASAR HARI INI</span><span class="live">● LIVE</span></div><div class="tabs">${["Indonesia", "Global", "Kripto", "Komoditas"].map(x => `<button class="tab ${x === activeMarket ? "active" : ""}" onclick="switchMarket('${x}')">${x}</button>`).join("")}</div><div id="market-rows">${marketRows(activeMarket)}</div><button class="ai-btn" id="ai-btn" onclick="toggleAiAnalysis()"><span>Analisis AI</span><span class="ai-btn-arrow">▶</span></button><div class="ai-panel" id="ai-panel"></div><a href="#/kategori/pasar-data" class="market-full">Lihat Data Lengkap →</a></aside>`; }
+function homeMarketItems() {
+  const rows = MARKET_GROUPS[activeMarket] || MARKET_GROUPS.Indonesia;
+  return rows.map(([label, symbol, fPrice, fPct]) => {
+    const q = window.__marketQuotes && window.__marketQuotes[symbol];
+    const down = q ? q.change < 0 : fPct.startsWith("-");
+    const price = q ? fmtPrice(q.price) : fPrice;
+    const pct = q ? pctFrom(q.change) : fPct;
+    return `<div class="home-market-item"><span class="home-market-label">${esc(label)}</span><strong>${price}</strong><small class="${down ? "down" : "up"}">${pct} ${spark(down)}</small></div>`;
+  }).join("");
+}
+function homeMarketSection() {
+  return `<section class="home-market">
+    <div class="home-market-head"><span class="home-market-title">PASAR HARI INI</span><span class="live">● LIVE</span></div>
+    <div class="tabs">${["Indonesia", "Global", "Kripto", "Komoditas"].map(x => `<button class="tab ${x === activeMarket ? "active" : ""}" onclick="switchMarket('${x}')">${x}</button>`).join("")}</div>
+    <div class="home-market-row" id="home-market-row">${homeMarketItems()}</div>
+    <div class="home-market-bottom"><button class="ai-btn" id="ai-btn" onclick="toggleAiAnalysis()"><span>Analisis AI</span><span class="ai-btn-arrow">▶</span></button><a href="#/kategori/pasar-data" class="market-full">Lihat Data Lengkap →</a></div>
+    <div class="ai-panel" id="ai-panel"></div>
+  </section>`;
+}
 
 function storyCard(a) { return `<article class="story-card"><a href="#/artikel/${a.id}" class="story-image">${a.breaking ? `<span class="breaking-badge-card">ϟ BREAKING</span>` : ""}<img src="${a.image || IMAGE.city}" alt="" loading="lazy"></a><span class="tag">${esc(a.category)}</span><a href="#/artikel/${a.id}"><h3>${esc(a.title)}</h3></a><time>${esc(a.date)} · ${esc(a.author)}</time></article>`; }
 
@@ -505,9 +648,7 @@ function home() {
           <div class="hero-track" id="hero-track">${slides.map((a, i) => heroSlide(a, i)).join("")}</div>
           <div class="hero-controls" aria-label="Navigasi slide"><button class="hero-arrow" onclick="heroPrev()" aria-label="Slide sebelumnya">←</button><span class="hero-count" id="hero-count" aria-live="polite">01 / ${String(slides.length).padStart(2, "0")}</span><button class="hero-arrow" onclick="heroNext()" aria-label="Slide berikutnya">→</button></div>
         </div>
-        <div class="hero">
-          ${marketCard()}
-        </div>
+        ${homeMarketSection()}
         <div class="under-hero"><div class="mini-grid">${supporting.map(a => `<article class="mini-card"><a href="#/artikel/${a.id}" class="mini-image"><img src="${a.image || IMAGE.city}" alt="" loading="lazy"></a><span class="tag">${esc(a.category)}</span><a href="#/artikel/${a.id}"><h3>${esc(a.title)}</h3></a><p>${esc(a.date)} · ${esc(a.author)}</p></article>`).join("")}</div><section class="trending"><h2>TRENDING</h2>${trends.map((a,i) => `<a href="#/artikel/${a.id}" class="trend-item"><span class="trend-no">0${i+1}</span><span><span class="trend-title">${esc(a.title)}</span><span class="trend-meta">${esc(a.date)}</span></span></a>`).join("")}</section></div>
         <section class="section"><div class="section-head"><h2>Breaking News</h2><a href="#/search">Lihat Semua →</a></div><div class="editorial-grid">${editorial.map(storyCard).join("")}</div></section>
       </div>
@@ -809,11 +950,11 @@ function articleEditor(id = null, presetCategory = null) {
 
   // --- Podcast / Video editor (layout lama) ---
   if (isMedia) {
-    return adminChrome(`<header class="admin-header"><div><h1>${heading}${badge}</h1><p>${sub}</p></div><a href="#/admin/articles" class="button ghost">← Semua Berita</a></header><form class="${formClass}" onsubmit="saveArticle(event, ${id || "null"})"><section class="form-card"><div><label for="title">Judul</label><input class="title-input" id="title" name="title" value="${esc(a.title)}" placeholder="Masukkan judul berita..." required></div><div><label>Ringkasan</label><textarea class="form-control" name="excerpt" rows="3" placeholder="Tulis ringkasan singkat...">${esc(a.excerpt)}</textarea></div><div><label>Isi artikel</label><div class="editor-toolbar" id="editor-toolbar"><select class="toolbar-select" onchange="execFmt('fontName', this.value); this.selectedIndex=0;"><option value="" disabled selected>Font</option><option value="DM Serif Display, Georgia, serif">DM Serif Display</option><option value="DM Sans, Arial, sans-serif">DM Sans</option><option value="Inter, sans-serif">Inter</option><option value="Georgia, serif">Georgia</option><option value="Merriweather, serif">Merriweather</option><option value="Playfair Display, serif">Playfair Display</option><option value="system-ui, sans-serif">System UI</option><option value="Arial, sans-serif">Arial</option><option value="Times New Roman, serif">Times New Roman</option><option value="Courier New, monospace">Courier New</option></select><select class="toolbar-select" onchange="execFmt('fontSize', this.value); this.selectedIndex=0;"><option value="" disabled selected>Ukuran</option><option value="1">Kecil</option><option value="3">Normal</option><option value="5">Sedang</option><option value="7">Besar</option></select><button type="button" onclick="execFmt('bold')" title="Bold"><b>B</b></button><button type="button" onclick="execFmt('italic')" title="Italic"><i>I</i></button><button type="button" onclick="execFmt('underline')" title="Underline"><u>U</u></button><button type="button" onclick="execFmt('strikeThrough')" title="Strikethrough"><s>S</s></button><span class="toolbar-sep"></span><button type="button" onclick="execFmt('formatBlock', 'H2')" title="Heading 2">H2</button><button type="button" onclick="execFmt('formatBlock', 'H3')" title="Heading 3">H3</button><button type="button" onclick="execFmt('formatBlock', 'BLOCKQUOTE')" title="Quote">\u275D</button><span class="toolbar-sep"></span><button type="button" onclick="execFmt('insertUnorderedList')" title="Bullet List">\u2022 List</button><button type="button" onclick="execFmt('insertOrderedList')" title="Numbered List">1. List</button><span class="toolbar-sep"></span><button type="button" onclick="execInsertLink()" title="Insert Link">\u2197</button><button type="button" onclick="execFmt('removeFormat')" title="Clear Formatting">\u2715</button></div><div class="content-area" id="content-editor" name="content" contenteditable="true" placeholder="Mulai menulis berita Anda di sini...">${a.content || ""}</div></div></section><aside class="form-card form-side"><div><label>Kategori</label><select class="form-control" name="category" onchange="updateMediaField(this)">${categories.slice(1,11).map(c=>`<option ${a.category===c?"selected":""}>${c}</option>`).join("")}</select></div><div><label>Penulis</label><select class="form-control" name="author"><option selected>${esc(editorName)}</option></select></div><div><label>URL gambar unggulan</label><input class="form-control" name="image" value="${esc(a.image)}" placeholder="https://... atau pilih foto di bawah"><label class="upload-btn" style="margin-top:10px" for="article-image-file"><span class="upload-icon">\u2191</span> Upload Foto dari Perangkat</label><input type="file" id="article-image-file" class="upload-input" accept="image/*" onchange="uploadArticleImage(this)"><button type="button" class="button ghost" style="margin-top:8px;display:block" onclick="openMediaPicker()">Pilih dari Media Library</button></div><div id="media-field-row" style="${mediaRowStyle}"><label id="media-field-label">${mediaLabel}</label><label class="upload-btn" id="media-upload-btn" for="media-file-input"><span class="upload-icon">\u2191</span> ${uploadBtn}</label><input type="file" id="media-file-input" class="upload-input" accept="${mediaAccept}" onchange="uploadArticleMedia(this)"><span class="upload-file-name" id="media-file-name">${a.media ? "File: " + esc(String(a.media).split("/").pop()) : "Belum ada file dipilih"}</span><input class="form-control" name="media" value="${esc(a.media || "")}" placeholder="URL file media" style="margin-top:8px"><p class="panel-subtitle" id="media-msg"></p>${isVideo ? `<div id="video-thumb-options" class="video-thumb-options"><label class="upload-btn" for="video-thumb-file" style="margin-bottom:10px"><span class="upload-icon">\u2191</span> Upload Thumbnail</label><input type="file" id="video-thumb-file" class="upload-input" accept="image/*" onchange="uploadArticleImage(this)"><div id="video-thumb-list" class="video-thumb-list"></div></div>` : ""}</div><label class="check-row"><input type="checkbox" name="featured" ${a.featured ? "checked" : ""}> Featured article</label><label class="check-row"><input type="checkbox" name="breaking" ${a.breaking ? "checked" : ""}> Breaking news</label><button class="button" name="action" value="publish">${publishLabel}</button><button class="button ghost" name="action" value="draft">Simpan sebagai Draft</button></aside></form>`, isPodcast ? "new-podcast" : "new-video");
+    return adminChrome(`<header class="admin-header"><div><h1>${heading}${badge}</h1><p>${sub}</p></div><a href="#/admin/articles" class="button ghost">← Semua Berita</a></header><form class="${formClass}" onsubmit="saveArticle(event, ${id || "null"})"><section class="form-card"><div><label for="title">Judul</label><input class="title-input" id="title" name="title" value="${esc(a.title)}" placeholder="Masukkan judul berita..." required></div><div><label>Ringkasan</label><textarea class="form-control" name="excerpt" rows="3" placeholder="Tulis ringkasan singkat...">${esc(a.excerpt)}</textarea></div><div><label>Isi artikel</label><div class="editor-toolbar" id="editor-toolbar"><select class="toolbar-select" onchange="execFmt('fontName', this.value); this.selectedIndex=0;"><option value="" disabled selected>Font</option><option value="Lora, Georgia, serif">Lora (Headlines)</option><option value="Source Serif 4, Georgia, serif">Source Serif 4 (Body)</option><option value="Crimson Pro, Georgia, serif">Crimson Pro (Feature)</option><option value="Inter, sans-serif">Inter (UI)</option><option value="Georgia, serif">Georgia</option><option value="Fraunces, Georgia, serif">Fraunces (Logo)</option><option value="system-ui, sans-serif">System UI</option><option value="Arial, sans-serif">Arial</option><option value="Times New Roman, serif">Times New Roman</option><option value="Courier New, monospace">Courier New</option></select><select class="toolbar-select" onchange="execFmt('fontSize', this.value); this.selectedIndex=0;"><option value="" disabled selected>Ukuran</option><option value="1">Kecil</option><option value="3">Normal</option><option value="5">Sedang</option><option value="7">Besar</option></select><button type="button" onclick="execFmt('bold')" title="Bold"><b>B</b></button><button type="button" onclick="execFmt('italic')" title="Italic"><i>I</i></button><button type="button" onclick="execFmt('underline')" title="Underline"><u>U</u></button><button type="button" onclick="execFmt('strikeThrough')" title="Strikethrough"><s>S</s></button><span class="toolbar-sep"></span><button type="button" onclick="execFmt('formatBlock', 'H2')" title="Heading 2">H2</button><button type="button" onclick="execFmt('formatBlock', 'H3')" title="Heading 3">H3</button><button type="button" onclick="execFmt('formatBlock', 'BLOCKQUOTE')" title="Quote">\u275D</button><span class="toolbar-sep"></span><button type="button" onclick="execFmt('insertUnorderedList')" title="Bullet List">\u2022 List</button><button type="button" onclick="execFmt('insertOrderedList')" title="Numbered List">1. List</button><span class="toolbar-sep"></span><button type="button" onclick="execInsertLink()" title="Insert Link">\u2197</button><button type="button" onclick="execFmt('removeFormat')" title="Clear Formatting">\u2715</button></div><div class="content-area" id="content-editor" name="content" contenteditable="true" placeholder="Mulai menulis berita Anda di sini...">${a.content || ""}</div></div></section><aside class="form-card form-side"><div><label>Kategori</label><select class="form-control" name="category" onchange="updateMediaField(this)">${categories.slice(1,11).map(c=>`<option ${a.category===c?"selected":""}>${c}</option>`).join("")}</select></div><div><label>Penulis</label><select class="form-control" name="author"><option selected>${esc(editorName)}</option></select></div><div><label>URL gambar unggulan</label><input class="form-control" name="image" value="${esc(a.image)}" placeholder="https://... atau pilih foto di bawah"><label class="upload-btn" style="margin-top:10px" for="article-image-file"><span class="upload-icon">\u2191</span> Upload Foto dari Perangkat</label><input type="file" id="article-image-file" class="upload-input" accept="image/*" onchange="uploadArticleImage(this)"><button type="button" class="button ghost" style="margin-top:8px;display:block" onclick="openMediaPicker()">Pilih dari Media Library</button></div><div id="media-field-row" style="${mediaRowStyle}"><label id="media-field-label">${mediaLabel}</label><label class="upload-btn" id="media-upload-btn" for="media-file-input"><span class="upload-icon">\u2191</span> ${uploadBtn}</label><input type="file" id="media-file-input" class="upload-input" accept="${mediaAccept}" onchange="uploadArticleMedia(this)"><span class="upload-file-name" id="media-file-name">${a.media ? "File: " + esc(String(a.media).split("/").pop()) : "Belum ada file dipilih"}</span><input class="form-control" name="media" value="${esc(a.media || "")}" placeholder="URL file media" style="margin-top:8px"><p class="panel-subtitle" id="media-msg"></p>${isVideo ? `<div id="video-thumb-options" class="video-thumb-options"><label class="upload-btn" for="video-thumb-file" style="margin-bottom:10px"><span class="upload-icon">\u2191</span> Upload Thumbnail</label><input type="file" id="video-thumb-file" class="upload-input" accept="image/*" onchange="uploadArticleImage(this)"><div id="video-thumb-list" class="video-thumb-list"></div></div>` : ""}</div><label class="check-row"><input type="checkbox" name="featured" ${a.featured ? "checked" : ""}> Featured article</label><label class="check-row"><input type="checkbox" name="breaking" ${a.breaking ? "checked" : ""}> Breaking news</label><button class="button" name="action" value="publish">${publishLabel}</button><button class="button ghost" name="action" value="draft">Simpan sebagai Draft</button></aside></form>`, isPodcast ? "new-podcast" : "new-video");
   }
 
   // --- Berita reguler: editor premium layout ---
-  return adminChrome(`<header class="admin-header"><div><h1>${heading}${badge}</h1><p>${sub}</p></div><a href="#/admin/articles" class="button ghost">\u2190 Semua Berita</a></header><form class="editor editor--news" onsubmit="saveArticle(event, ${id || "null"})"><section class="form-card editor-main"><div class="news-breadcrumb"><span class="breadcrumb-item">HOME</span><span class="breadcrumb-sep">&gt;</span><select class="breadcrumb-cat" name="category" onchange="updateMediaField(this); document.querySelectorAll('.news-cat-badge').forEach(b => b.textContent = this.value.toUpperCase())">${categories.slice(1,11).map(c=>`<option ${a.category===c?"selected":""}>${c}</option>`).join("")}</select><span class="breadcrumb-sep">&gt;</span><span class="breadcrumb-title" id="bc-title">${esc(a.title || "Judul Artikel")}</span></div><div class="news-cat-badge" id="news-cat-badge">${a.category.toUpperCase()}</div><div><input class="news-headline" id="title" name="title" value="${esc(a.title)}" placeholder="Judul Berita" required oninput="document.getElementById('bc-title').textContent = this.value || 'Judul Artikel'"></div><div><textarea class="news-subhead" name="excerpt" rows="2" placeholder="Subheadline \u2014 tulis inti berita dalam satu kalimat..." required>${esc(a.excerpt)}</textarea></div><div class="news-author-bar"><div class="news-author-left"><img class="avatar news-author-img" src="${esc(editorAvatar)}" alt=""><div class="news-author-info"><span class="news-author-name">${esc(editorName)}</span><span class="news-author-meta">${esc(today)} \u00b7 ${readMin} menit baca</span></div></div><div class="news-author-right"><button type="button" class="news-action-btn" title="Bookmark">\u2606</button><button type="button" class="news-action-btn" title="Share">\u2197</button></div></div><div class="news-hero"><img src="${esc(a.image)}" alt="" id="news-hero-img"><div class="news-hero-actions"><label class="upload-btn news-hero-upload" for="article-image-file"><span class="upload-icon">\u2191</span> Upload Foto Utama</label><input type="file" id="article-image-file" class="upload-input" accept="image/*" onchange="uploadArticleImage(this)"><button type="button" class="button ghost" onclick="openMediaPicker()">Pilih dari Media</button></div><input type="hidden" name="image" value="${esc(a.image)}"></div><div class="news-editor-section"><label class="news-section-label">ISI ARTIKEL</label><div class="editor-toolbar" id="editor-toolbar"><select class="toolbar-select" onchange="execFmt('fontName', this.value); this.selectedIndex=0;"><option value="" disabled selected>Font</option><option value="DM Serif Display, Georgia, serif">DM Serif Display</option><option value="DM Sans, Arial, sans-serif">DM Sans</option><option value="Inter, sans-serif">Inter</option><option value="Georgia, serif">Georgia</option><option value="Merriweather, serif">Merriweather</option><option value="Playfair Display, serif">Playfair Display</option><option value="system-ui, sans-serif">System UI</option><option value="Arial, sans-serif">Arial</option><option value="Times New Roman, serif">Times New Roman</option><option value="Courier New, monospace">Courier New</option></select><select class="toolbar-select" onchange="execFmt('fontSize', this.value); this.selectedIndex=0;"><option value="" disabled selected>Ukuran</option><option value="1">Kecil</option><option value="3">Normal</option><option value="5">Sedang</option><option value="7">Besar</option></select><button type="button" onclick="execFmt('bold')" title="Bold"><b>B</b></button><button type="button" onclick="execFmt('italic')" title="Italic"><i>I</i></button><button type="button" onclick="execFmt('underline')" title="Underline"><u>U</u></button><button type="button" onclick="execFmt('strikeThrough')" title="Strikethrough"><s>S</s></button><span class="toolbar-sep"></span><button type="button" onclick="execFmt('formatBlock', 'H2')" title="Heading 2">H2</button><button type="button" onclick="execFmt('formatBlock', 'H3')" title="Heading 3">H3</button><button type="button" onclick="execFmt('formatBlock', 'BLOCKQUOTE')" title="Quote">\u275D</button><span class="toolbar-sep"></span><button type="button" onclick="execFmt('insertUnorderedList')" title="Bullet List">\u2022 List</button><button type="button" onclick="execFmt('insertOrderedList')" title="Numbered List">1. List</button><span class="toolbar-sep"></span><button type="button" onclick="execInsertLink()" title="Insert Link">\u2197</button><button type="button" onclick="execFmt('removeFormat')" title="Clear Formatting">\u2715</button></div><div class="content-area news-content-area" id="content-editor" name="content" contenteditable="true" placeholder="Mulai menulis berita Anda di sini...">${a.content || ""}</div></div><div class="news-editor-section"><label class="news-section-label">PULL QUOTE</label><div class="news-pullquote-editor"><textarea class="news-pullquote-input" name="pullQuote" rows="2" placeholder="Kutipan penting dari narasumber...">${esc(a.pullQuote || "")}</textarea><input class="news-pullquote-source" name="pullQuoteSource" value="${esc(a.pullQuoteSource || "")}" placeholder="Nama narasumber, jabatan"></div></div><div class="news-editor-section"><label class="news-section-label">SEO</label><input class="form-control" name="seo" value="${esc(a.title)}" placeholder="Judul untuk mesin pencari"></div></section><aside class="form-card form-side"><div><label>Penulis</label><select class="form-control" name="author"><option selected>${esc(editorName)}</option></select></div><label class="check-row"><input type="checkbox" name="featured" ${a.featured ? "checked" : ""}> Featured article</label><label class="check-row"><input type="checkbox" name="breaking" ${a.breaking ? "checked" : ""}> Breaking news</label><div id="media-field-row" style="${mediaRowStyle}"><label id="media-field-label">${mediaLabel}</label><label class="upload-btn" id="media-upload-btn" for="media-file-input"><span class="upload-icon">\u2191</span> ${uploadBtn}</label><input type="file" id="media-file-input" class="upload-input" accept="${mediaAccept}" onchange="uploadArticleMedia(this)"><span class="upload-file-name" id="media-file-name">${a.media ? "File: " + esc(String(a.media).split("/").pop()) : "Belum ada file dipilih"}</span><input class="form-control" name="media" value="${esc(a.media || "")}" placeholder="URL file media" style="margin-top:8px"><p class="panel-subtitle" id="media-msg"></p></div><button class="button" name="action" value="publish">${publishLabel}</button><button class="button ghost" name="action" value="draft">Simpan sebagai Draft</button></aside></form>`, "new");
+  return adminChrome(`<header class="admin-header"><div><h1>${heading}${badge}</h1><p>${sub}</p></div><a href="#/admin/articles" class="button ghost">\u2190 Semua Berita</a></header><form class="editor editor--news" onsubmit="saveArticle(event, ${id || "null"})"><section class="form-card editor-main"><div class="news-breadcrumb"><span class="breadcrumb-item">HOME</span><span class="breadcrumb-sep">&gt;</span><select class="breadcrumb-cat" name="category" onchange="updateMediaField(this); document.querySelectorAll('.news-cat-badge').forEach(b => b.textContent = this.value.toUpperCase())">${categories.slice(1,11).map(c=>`<option ${a.category===c?"selected":""}>${c}</option>`).join("")}</select><span class="breadcrumb-sep">&gt;</span><span class="breadcrumb-title" id="bc-title">${esc(a.title || "Judul Artikel")}</span></div><div class="news-cat-badge" id="news-cat-badge">${a.category.toUpperCase()}</div><div><input class="news-headline" id="title" name="title" value="${esc(a.title)}" placeholder="Judul Berita" required oninput="document.getElementById('bc-title').textContent = this.value || 'Judul Artikel'"></div><div><textarea class="news-subhead" name="excerpt" rows="2" placeholder="Subheadline \u2014 tulis inti berita dalam satu kalimat..." required>${esc(a.excerpt)}</textarea></div><div class="news-author-bar"><div class="news-author-left"><img class="avatar news-author-img" src="${esc(editorAvatar)}" alt=""><div class="news-author-info"><span class="news-author-name">${esc(editorName)}</span><span class="news-author-meta">${esc(today)} \u00b7 ${readMin} menit baca</span></div></div><div class="news-author-right"><button type="button" class="news-action-btn" title="Bookmark">\u2606</button><button type="button" class="news-action-btn" title="Share">\u2197</button></div></div><div class="news-hero"><img src="${esc(a.image)}" alt="" id="news-hero-img"><div class="news-hero-actions"><label class="upload-btn news-hero-upload" for="article-image-file"><span class="upload-icon">\u2191</span> Upload Foto Utama</label><input type="file" id="article-image-file" class="upload-input" accept="image/*" onchange="uploadArticleImage(this)"><button type="button" class="button ghost" onclick="openMediaPicker()">Pilih dari Media</button></div><input type="hidden" name="image" value="${esc(a.image)}"></div><div class="news-editor-section"><label class="news-section-label">ISI ARTIKEL</label><div class="editor-toolbar" id="editor-toolbar"><select class="toolbar-select" onchange="execFmt('fontName', this.value); this.selectedIndex=0;"><option value="" disabled selected>Font</option><option value="Lora, Georgia, serif">Lora (Headlines)</option><option value="Source Serif 4, Georgia, serif">Source Serif 4 (Body)</option><option value="Crimson Pro, Georgia, serif">Crimson Pro (Feature)</option><option value="Inter, sans-serif">Inter (UI)</option><option value="Georgia, serif">Georgia</option><option value="Fraunces, Georgia, serif">Fraunces (Logo)</option><option value="system-ui, sans-serif">System UI</option><option value="Arial, sans-serif">Arial</option><option value="Times New Roman, serif">Times New Roman</option><option value="Courier New, monospace">Courier New</option></select><select class="toolbar-select" onchange="execFmt('fontSize', this.value); this.selectedIndex=0;"><option value="" disabled selected>Ukuran</option><option value="1">Kecil</option><option value="3">Normal</option><option value="5">Sedang</option><option value="7">Besar</option></select><button type="button" onclick="execFmt('bold')" title="Bold"><b>B</b></button><button type="button" onclick="execFmt('italic')" title="Italic"><i>I</i></button><button type="button" onclick="execFmt('underline')" title="Underline"><u>U</u></button><button type="button" onclick="execFmt('strikeThrough')" title="Strikethrough"><s>S</s></button><span class="toolbar-sep"></span><button type="button" onclick="execFmt('formatBlock', 'H2')" title="Heading 2">H2</button><button type="button" onclick="execFmt('formatBlock', 'H3')" title="Heading 3">H3</button><button type="button" onclick="execFmt('formatBlock', 'BLOCKQUOTE')" title="Quote">\u275D</button><span class="toolbar-sep"></span><button type="button" onclick="execFmt('insertUnorderedList')" title="Bullet List">\u2022 List</button><button type="button" onclick="execFmt('insertOrderedList')" title="Numbered List">1. List</button><span class="toolbar-sep"></span><button type="button" onclick="execInsertLink()" title="Insert Link">\u2197</button><button type="button" onclick="execFmt('removeFormat')" title="Clear Formatting">\u2715</button></div><div class="content-area news-content-area" id="content-editor" name="content" contenteditable="true" placeholder="Mulai menulis berita Anda di sini...">${a.content || ""}</div></div><div class="news-editor-section"><label class="news-section-label">PULL QUOTE</label><div class="news-pullquote-editor"><textarea class="news-pullquote-input" name="pullQuote" rows="2" placeholder="Kutipan penting dari narasumber...">${esc(a.pullQuote || "")}</textarea><input class="news-pullquote-source" name="pullQuoteSource" value="${esc(a.pullQuoteSource || "")}" placeholder="Nama narasumber, jabatan"></div></div><div class="news-editor-section"><label class="news-section-label">SEO</label><input class="form-control" name="seo" value="${esc(a.title)}" placeholder="Judul untuk mesin pencari"></div></section><aside class="form-card form-side"><div><label>Penulis</label><select class="form-control" name="author"><option selected>${esc(editorName)}</option></select></div><label class="check-row"><input type="checkbox" name="featured" ${a.featured ? "checked" : ""}> Featured article</label><label class="check-row"><input type="checkbox" name="breaking" ${a.breaking ? "checked" : ""}> Breaking news</label><div id="media-field-row" style="${mediaRowStyle}"><label id="media-field-label">${mediaLabel}</label><label class="upload-btn" id="media-upload-btn" for="media-file-input"><span class="upload-icon">\u2191</span> ${uploadBtn}</label><input type="file" id="media-file-input" class="upload-input" accept="${mediaAccept}" onchange="uploadArticleMedia(this)"><span class="upload-file-name" id="media-file-name">${a.media ? "File: " + esc(String(a.media).split("/").pop()) : "Belum ada file dipilih"}</span><input class="form-control" name="media" value="${esc(a.media || "")}" placeholder="URL file media" style="margin-top:8px"><p class="panel-subtitle" id="media-msg"></p></div><button class="button" name="action" value="publish">${publishLabel}</button><button class="button ghost" name="action" value="draft">Simpan sebagai Draft</button></aside></form>`, "new");
 }
 window.execFmt = (cmd, val) => { document.execCommand(cmd, false, val || null); document.getElementById("content-editor")?.focus(); };
 window.execInsertLink = () => { const url = prompt("Masukkan URL:"); if (url) document.execCommand("createLink", false, url); };
