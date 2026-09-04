@@ -99,10 +99,10 @@ Karena domain `.com` Anda sudah terdaftar di Netlify, ikuti langkah berikut:
 ## Fitur situs
 
 - Beranda dengan carousel headline, kartu Pasar Hari Ini (tab Indonesia/Global/Kripto/Komoditas) + analisis AI otomatis, trending, breaking news.
-- Halaman kategori, detail artikel, pencarian, Indeks PRO, Podcast (audio), Video (video), **Opini** (opini publik — publik menulis opini, posting **wajib login**, murni untuk dibaca & dibagikan, tanpa balasan/komentar/vote, profil (nama + foto) pengguna tampil di setiap opini).
+- Halaman kategori, detail artikel, pencarian, Indeks PRO, **Dengarkan Artikel** (pemutar audio "Dengarkan artikel ini" di halaman artikel bila redaksi mengunggah versi suara MP3 — untuk pembaca yang tidak ingin membaca), Podcast (audio), Video (video), **Opini** (opini publik — publik menulis opini, posting **wajib login**, murni untuk dibaca & dibagikan, tanpa balasan/komentar/vote, profil (nama + foto) pengguna tampil di setiap opini).
 - **Forum Diskusi** (`#/forum`): ruang diskusi publik — buat topik, balas, vote naik/turun, dan bagikan; posting & balas **wajib login**.
 - Grafik TradingView real-time di halaman Pasar & Data (IHSG, USD/IDR, Emas, Bitcoin, Ethereum) dengan deteksi jam buka/tutup pasar.
-- Dashboard CMS: dashboard, daftar berita (cari/filter/hapus/hapus semua), editor berita (publish/draft/scheduled, featured, breaking), media library, kategori, penulis (kelola akun — dibuat admin), traffic & analytics, pengaturan (profil + foto, ubah password).
+- Dashboard CMS: dashboard, daftar berita (cari/filter/hapus/hapus semua), editor berita (publish/draft/scheduled, featured, breaking) dengan toolbar format teks — termasuk perataan rata kiri/tengah/kanan/**justify** — dan seksi **upload audio versi suara artikel** (MP3), media library, kategori, penulis (kelola akun — dibuat admin), traffic & analytics, pengaturan (profil + foto, ubah password).
 - **Podcast & Video dari dashboard**: pilih kategori Podcast → upload **MP3**, kategori Video → upload **MP4** (maks 25 MB). File tersimpan di server dan langsung diputar di halaman Podcast/Video serta di detail artikel.
 
 ## Struktur file penting
